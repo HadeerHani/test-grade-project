@@ -2,15 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:second_project/screens/account_screen.dart';
 //import 'package:second_project/screens/account_screen.dart';
+//import 'package:second_project/screens/account_screen.dart';
 //import 'package:second_project/color.dart';
 import 'package:second_project/screens/color_screen.dart';
 import 'package:second_project/screens/create_account_screen.dart';
+import 'package:second_project/screens/earnings_screen.dart';
 import 'package:second_project/screens/forgot_password.dart';
 import 'package:second_project/screens/home_screen.dart';
 import 'package:second_project/screens/jobs_screen.dart';
 //import 'package:second_project/fix.dart';
 import 'package:second_project/screens/login_screen.dart';
 import 'package:second_project/screens/main_aej_screen.dart';
+import 'package:second_project/screens/personal_page.dart';
 import 'package:second_project/screens/select_services.dart';
 import 'package:second_project/screens/send_code_screen.dart';
 import 'package:second_project/screens/user_provider.dart';
@@ -22,14 +25,13 @@ import 'package:second_project/screens/worker_verification_screen.dart';
 
 void main() {
   runApp(
-    MultiProvider(providers: [
-      ChangeNotifierProvider(create: (_)=>UserProvider())
-    ],
-      child:const MyApp()
-    )
-    //const MyApp()
-    
-    );
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => UserProvider()),
+      ],
+      child: const MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {
@@ -57,7 +59,7 @@ class MyApp extends StatelessWidget {
           toolbarHeight: 80.0,
           titleTextStyle: TextStyle(
             color: AppColors.secondaryLightBeige,
-            fontSize: 32,
+            fontSize: 33,
             fontWeight: FontWeight.bold,
           ),
           backgroundColor: AppColors.primaryDarkGreen,
@@ -121,7 +123,8 @@ class MyApp extends StatelessWidget {
           ),
         ),
       ),
-      home: WelcomeScreenModified(),
+      home:SelectServicesScreen(),
+      // MainScreen(selectedSkills: ['Electerician']),
     );
   }
 }

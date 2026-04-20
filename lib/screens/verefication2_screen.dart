@@ -6,7 +6,8 @@ import 'package:second_project/screens/welcome_screen_modified.dart';
 import 'package:second_project/screens/worker_verification_screen.dart';
 
 class Verification2Screen extends StatefulWidget {
-  const Verification2Screen({super.key});
+  final List<String> selectedSkills;
+  const Verification2Screen({super.key, required this.selectedSkills});
   @override
   State<Verification2Screen> createState() => _Verification2ScreenState();
 }
@@ -90,7 +91,7 @@ class _Verification2ScreenState extends State<Verification2Screen> {
                         context,
                         MaterialPageRoute(
                           builder: (context) {
-                            return WorkerVerificationScreen();
+                            return WorkerVerificationScreen(selectedSkills: widget.selectedSkills);
                           },
                         ),
                       );

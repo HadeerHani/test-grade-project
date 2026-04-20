@@ -186,3 +186,4 @@ class _WorkerVerificationScreenState extends State<WorkerVerificationScreen> {
     ); 
   } // End of build
 } // End of _WorkerVerificationScreenState
+*/

@@ -1,3 +1,4 @@
+import 'package:second_project/screens/main_aej_screen.dart';
 import 'package:second_project/screens/verefication2_screen.dart';
 import 'package:second_project/screens/welcome_screen_modified.dart';
 // lib/screens/select_services_screen.dart (الكود النهائي)
@@ -198,9 +199,12 @@ class _SelectServicesScreenState extends State<SelectServicesScreen> {
                 onPressed: _selectedSkills.isEmpty ? null : () {
                   Navigator.push(
                 context,
+                /*MaterialPageRoute(
+      builder: (context) => MainScreen(selectedSkills: _selectedSkills.toList()), 
+    ),*/
                 MaterialPageRoute(
                   builder: (context) {
-                    return Verification2Screen();
+                    return Verification2Screen(selectedSkills: _selectedSkills);
                   },
                 ),
               );

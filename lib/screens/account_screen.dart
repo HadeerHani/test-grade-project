@@ -93,15 +93,17 @@ class _WorkerProfilePageState extends State<WorkerProfilePage> {
               children: [
                 const SizedBox(height: 20),
                 // جزء الصورة والاسم العلوي
-                   _buildHeader(wp, primaryDarkGreen, cardBackground,),
+                _buildHeader(wp, primaryDarkGreen, cardBackground),
 
                 Padding(
                   padding: const EdgeInsets.all(16.0),
                   child: Column(
                     children: [
                       // كارت المعلومات الشخصية
-                      SizedBox(width: double.infinity,
-                        child: _buildInfoCard(cardBackground, greyLabel)),
+                      SizedBox(
+                        width: double.infinity,
+                        child: _buildInfoCard(cardBackground, greyLabel),
+                      ),
                       const SizedBox(height: 16),
                       // كارت الـ Worker Status والـ Specialties
                       _buildStatusCard(cardBackground, greyLabel),
@@ -285,9 +287,11 @@ class _WorkerProfilePageState extends State<WorkerProfilePage> {
                     ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(18),
-                      borderSide: BorderSide(color: Colors.grey[200]!.withOpacity(0.1)),
+                      borderSide: BorderSide(
+                        color: Colors.grey[200]!.withOpacity(0.1),
+                      ),
                     ),
-                   /* focusedBorder: OutlineInputBorder(
+                    /* focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(18),
                       borderSide: const BorderSide(color: Color(0xFF132F2B)),
                     ),*/
@@ -336,7 +340,7 @@ class _WorkerProfilePageState extends State<WorkerProfilePage> {
               ),
             ],
           ),
-          const Divider(height: 40 ,color:AppColors.primaryDarkGreen),
+          const Divider(height: 40, color: AppColors.primaryDarkGreen),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -352,7 +356,7 @@ class _WorkerProfilePageState extends State<WorkerProfilePage> {
                 child: const Text(
                   "Update Services",
                   style: TextStyle(
-                    color:AppColors.textgrey,
+                    color: AppColors.textgrey,
                     decoration: TextDecoration.underline,
                   ),
                 ),
@@ -371,13 +375,13 @@ class _WorkerProfilePageState extends State<WorkerProfilePage> {
         onPressed: () {
           Provider.of<UserProvider>(context, listen: false).logout();
           Navigator.pushAndRemoveUntil(
-    context,
-    MaterialPageRoute(builder: (context) => const LoginScreen()), 
-    (route) => false,
-  );
+            context,
+            MaterialPageRoute(builder: (context) => const LoginScreen()),
+            (route) => false,
+          );
         },
         style: ElevatedButton.styleFrom(
-          backgroundColor:const Color(0xFFC62828), 
+          backgroundColor: const Color(0xFFC62828),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(30),
           ),
@@ -386,7 +390,7 @@ class _WorkerProfilePageState extends State<WorkerProfilePage> {
         child: const Text(
           "Log Out",
           style: TextStyle(
-            color:AppColors.backgroundWhite,
+            color: AppColors.backgroundWhite,
             fontWeight: FontWeight.bold,
             fontSize: 16,
           ),

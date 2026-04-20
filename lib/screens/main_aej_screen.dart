@@ -1,12 +1,12 @@
-import 'package:second_project/screens/welcome_screen_modified.dart';
 import 'package:flutter/material.dart';
-//import '../utils/colors.dart';
-import 'jobs_screen.dart';
-import 'earnings_screen.dart';
-import 'account_screen.dart';
+import 'package:second_project/screens/welcome_screen_modified.dart';
+import 'jobs_screen.dart'; 
+import 'earnings_screen.dart'; 
+import 'account_screen.dart'; 
 
 class MainScreen extends StatefulWidget {
-  const MainScreen({super.key});
+  final List<String> selectedSkills;
+  const MainScreen({super.key, required this.selectedSkills});
 
   @override
   State<MainScreen> createState() => _MainScreenState();
@@ -15,11 +15,19 @@ class MainScreen extends StatefulWidget {
 class _MainScreenState extends State<MainScreen> {
   int _selectedIndex = 0;
 
-  static final List<Widget> _widgetOptions = <Widget>[
-    const JobsScreen(),
-    const EarningsScreen(),
-    const WorkerProfilePage()
-  ];
+  // 1. بنعرف اللستة هنا كمتغير عادي مش static ولا ثابت
+  late List<Widget> _widgetOptions;
+
+  @override
+  void initState() {
+    super.initState();
+    // 2. بنملا اللستة هنا أول ما الصفحة تفتح (عشان نقدر نستخدم widget.selectedSkills)
+    _widgetOptions = [
+      JobsScreen(selectedSkills: widget.selectedSkills),
+      const EarningsScreen(),
+      const WorkerProfilePage(),
+    ];
+  }
 
   void _onItemTapped(int index) {
     setState(() {
@@ -30,29 +38,22 @@ class _MainScreenState extends State<MainScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
+      // 3. بنعرض الصفحة بناءً على الاختيار
       body: Center(
         child: _widgetOptions.elementAt(_selectedIndex),
       ),
       bottomNavigationBar: BottomNavigationBar(
         backgroundColor: AppColors.backgroundWhite,
-        items: const <BottomNavigationBarItem>[
-          BottomNavigationBarItem(
-            icon: Icon(Icons.work),
-            label: 'Jobs',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.attach_money),
-            label: 'Earnings',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person),
-            label: 'Account',
-          ),
-        ],
         currentIndex: _selectedIndex,
-        selectedItemColor: AppColors.primaryDarkGreen, 
-        unselectedItemColor: Colors.grey,
         onTap: _onItemTapped,
+        selectedItemColor: AppColors.primaryDarkGreen,
+        unselectedItemColor: Colors.grey,
+        items: const [
+          BottomNavigationBarItem(icon: Icon(Icons.work), label: 'Jobs'),
+          BottomNavigationBarItem(icon: Icon(Icons.monetization_on), label: 'Earnings'),
+          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Account'),
+        ],
       ),
     );
   }

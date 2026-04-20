@@ -1,5 +1,3 @@
-// lib/screens/jobs_screen.dart
-
 import 'package:flutter/material.dart';
 import 'package:second_project/screens/welcome_screen_modified.dart';
 class AppCard extends StatelessWidget {
@@ -19,7 +17,8 @@ class AppCard extends StatelessWidget {
 }
 
 class JobsScreen extends StatelessWidget {
-  const JobsScreen({super.key});
+  final List<String> selectedSkills;
+  const JobsScreen({super.key, required this.selectedSkills});
 
   PreferredSizeWidget _buildAppBar(BuildContext context) {
     return AppBar(
@@ -41,69 +40,66 @@ class JobsScreen extends StatelessWidget {
           icon: const Icon(Icons.notifications_none),
           onPressed: () {},
         ),
-        IconButton(
-          icon: const Icon(Icons.person_rounded),
-          onPressed: () {},
-        ),
+        IconButton(icon: const Icon(Icons.person_rounded), onPressed: () {}),
       ],
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.backgroundWhite,
-      appBar: _buildAppBar(context),
-      body: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Text(
-                'Available Jobs',
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.primaryDarkGreen,
-                ), 
+     return Scaffold(
+     backgroundColor: AppColors.backgroundWhite,
+     extendBody: true,
+    appBar: _buildAppBar(context),
+    //body:
+    body: SingleChildScrollView(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Text(
+              'Available Jobs',
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: AppColors.primaryDarkGreen,
               ),
             ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
-              child: Text(
-                'Showing tasks matching your Electrician, Appliance Repair, Painter specialty.',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.grey.shade700,
-                ), 
-              ),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+            child: Text(
+              'Showing tasks matching your:${selectedSkills.join(", ")}', 
+              //Electrician, Appliance Repair, Painter specialty.',
+              style: TextStyle(fontSize: 14, color: Colors.grey.shade700),
             ),
-            _buildJobCard(
-              title: 'Outdoor Circuit Breaker',
-              specialty: 'Electrician',
-              price: 250,
-              details: 'Need a dedicated 20A circuit run to the new shed.',
-              location: 'East Suburbs, 15 mi',
-              posted: 'Posted 3h ago',
-              icon: Icons.lightbulb_outline,
-            ),
-            _buildJobCard(
-              title: 'Unusual Request',
-              specialty: 'Customized Request',
-              price: 100,
-              details:
-                  'Need someone to assemble complex Swedish flat-pack furniture.',
-              location: 'North City, 5 mi',
-              posted: 'Posted 2h ago',
-              icon: Icons.auto_fix_high,
-            ),
-            const SizedBox(height: 10),
-            _buildRatingsSection(),
-          ],
-        ),
+          ),
+          _buildJobCard(
+            title: 'Outdoor Circuit Breaker',
+            specialty: 'Electrician',
+            price: 250,
+            details: 'Need a dedicated 20A circuit run to the new shed.',
+            location: 'East Suburbs, 15 mi',
+            posted: 'Posted 3h ago',
+            icon: Icons.lightbulb_outline,
+          ),
+          _buildJobCard(
+            title: 'Unusual Request',
+            specialty: 'Customized Request',
+            price: 100,
+            details:
+                'Need someone to assemble complex Swedish flat-pack furniture.',
+            location: 'North City, 5 mi',
+            posted: 'Posted 2h ago',
+            icon: Icons.auto_fix_high,
+          ),
+          const SizedBox(height: 10),
+          _buildRatingsSection(),
+        ],
       ),
-    );
+    ),
+     );
   }
 
   Widget _buildJobCard({
@@ -136,7 +132,7 @@ class JobsScreen extends StatelessWidget {
                           color: AppColors.primaryDarkGreen,
                         ),
                       ),
-                    ), 
+                    ),
                   ],
                 ),
               ),
@@ -147,7 +143,7 @@ class JobsScreen extends StatelessWidget {
                   fontWeight: FontWeight.bold,
                   color: AppColors.primaryDarkGreen,
                 ),
-              ), 
+              ),
             ],
           ),
           const SizedBox(height: 4),
@@ -157,19 +153,19 @@ class JobsScreen extends StatelessWidget {
               color: AppColors.primaryDarkGreen.withOpacity(0.1),
               borderRadius: BorderRadius.circular(5),
               boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.2),
-            spreadRadius: 1,
-            blurRadius: 5,
-            offset: const Offset(0, 3),
-          ),
-        ],
+                BoxShadow(
+                  color: Colors.grey.withOpacity(0.2),
+                  spreadRadius: 1,
+                  blurRadius: 5,
+                  offset: const Offset(0, 3),
+                ),
+              ],
             ),
             child: Text(
               specialty,
               style: TextStyle(
                 fontSize: 12,
-                color: AppColors.primaryDarkGreen, 
+                color: AppColors.primaryDarkGreen,
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -177,10 +173,7 @@ class JobsScreen extends StatelessWidget {
           const SizedBox(height: 8),
           Text(
             details,
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.grey.shade700,
-            ), 
+            style: TextStyle(fontSize: 14, color: Colors.grey.shade700),
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
           ),
@@ -191,14 +184,19 @@ class JobsScreen extends StatelessWidget {
               Flexible(
                 child: Text(
                   '$location | $posted',
-                  style: TextStyle(fontSize: 12, color: const Color.fromRGBO(117, 117, 117, 1)),
-                ), 
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: const Color.fromRGBO(117, 117, 117, 1),
+                  ),
+                ),
               ),
               ElevatedButton(
-                style: ElevatedButton.styleFrom(backgroundColor:
-                 AppColors.button,foregroundColor: AppColors.primaryDarkGreen),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.button,
+                  foregroundColor: AppColors.primaryDarkGreen,
+                ),
                 onPressed: () {},
-                child: const Text('View Details & Act'), 
+                child: const Text('View Details & Act'),
               ),
             ],
           ),
@@ -220,7 +218,7 @@ class JobsScreen extends StatelessWidget {
               color: AppColors.primaryDarkGreen,
             ),
           ),
-          const Divider(height: 20,color: AppColors.primaryDarkGreen),
+          const Divider(height: 20, color: AppColors.primaryDarkGreen),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -238,7 +236,7 @@ class JobsScreen extends StatelessWidget {
                           fontWeight: FontWeight.bold,
                           color: AppColors.primaryDarkGreen,
                         ),
-                      ), 
+                      ),
                     ],
                   ),
                   const Icon(
@@ -252,8 +250,8 @@ class JobsScreen extends StatelessWidget {
               Text(
                 'You received 2 ratings.',
                 style: TextStyle(fontSize: 14, color: Colors.grey.shade700),
-              ), 
-              const Divider(height: 20,color: AppColors.primaryDarkGreen,),
+              ),
+              const Divider(height: 20, color: AppColors.primaryDarkGreen),
               _buildRatingItem('4.0 from Jane D.', 'Sep 28, 2025'),
               _buildRatingItem('5.0 from Mark R.', 'Oct 1, 2025'),
             ],
@@ -272,11 +270,11 @@ class JobsScreen extends StatelessWidget {
           Text(
             rating,
             style: TextStyle(fontSize: 14, color: AppColors.primaryDarkGreen),
-          ), 
+          ),
           Text(
             date,
             style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
-          ), 
+          ),
         ],
       ),
     );

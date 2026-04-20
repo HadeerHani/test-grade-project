@@ -37,32 +37,36 @@ class HomeScreen extends StatelessWidget {
             onPressed: () {},
             icon: const Icon(Icons.notifications_none),
           ),
-          //IconButton(onPressed: () {}, icon: const Icon(Icons.person_outline)),
-         // const SizedBox(width: 8),
-         Consumer<UserProvider>(
-  builder: (context, userProvider, child) {
-    return GestureDetector(
-      onTap: () {
-        // ممكن تفتحي صفحة البروفايل لما يضغط على الصورة
-        Navigator.pushNamed(context, '/account'); 
-      },
-      child: Padding(
-        padding: const EdgeInsets.only(right: 16.0),
-        child: CircleAvatar(
-          radius: 18,
-          backgroundColor: Colors.grey[300],
-          // 💡 هنا بنشيك: لو فيه صورة في الـ Provider اعرضيها، لو مفيش اعرضي الأيقونة
-          backgroundImage: userProvider.userImage != null 
-              ? FileImage(userProvider.userImage!) 
-              : null,
-          child: userProvider.userImage == null 
-              ? const Icon(Icons.person, color: Colors.white, size: 20) 
-              : null,
-        ),
-      ),
-    );
-  },
-),
+          IconButton(onPressed: () {}, icon: const Icon(Icons.person_outline)),
+          // const SizedBox(width: 8),
+          Consumer<UserProvider>(
+            builder: (context, userProvider, child) {
+              return GestureDetector(
+                onTap: () {
+                  // ممكن تفتحي صفحة البروفايل لما يضغط على الصورة
+                  Navigator.pushNamed(context, '/account');
+                },
+                child: Padding(
+                  padding: const EdgeInsets.only(right: 16.0),
+                  child: CircleAvatar(
+                    radius: 18,
+                    backgroundColor: Colors.grey[300],
+                    // 💡 هنا بنشيك: لو فيه صورة في الـ Provider اعرضيها، لو مفيش اعرضي الأيقونة
+                    backgroundImage: userProvider.userImage != null
+                        ? FileImage(userProvider.userImage!)
+                        : null,
+                    child: userProvider.userImage == null
+                        ? const Icon(
+                            Icons.person,
+                            color: Colors.white,
+                            size: 20,
+                          )
+                        : null,
+                  ),
+                ),
+              );
+            },
+          ),
         ],
       ),
 
@@ -445,6 +449,7 @@ class HomeScreen extends StatelessWidget {
       ),
     );
   }
+}
 
   // --- شريط التنقل السفلي ---
   /* Widget _buildBottomNav(BuildContext context) {
@@ -512,4 +517,22 @@ class HomeScreen extends StatelessWidget {
       ),
     );
   }*/
+/*import 'package:flutter/material.dart';
+import 'package:second_project/screens/welcome_screen_modified.dart';
+
+class HomeScreen extends StatefulWidget {
+  const HomeScreen({super.key});
+
+  @override
+  State<HomeScreen> createState() => _HomeScreen();
 }
+
+class _HomeScreen extends State<HomeScreen> {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(),
+      backgroundColor: AppColors.backgroundWhite,
+    );
+  }
+}*/

@@ -17,14 +17,34 @@ class PersonalPage extends StatefulWidget {
 
 class _PersonalPageState extends State<PersonalPage> {
   bool isEditing = false;
+  late TextEditingController nameController;
+  late TextEditingController emailController;
+  late TextEditingController phoneController;
+  late TextEditingController addressController;
+  late TextEditingController bioController;
+
+  @override
+  void initState() {
+    super.initState();
+    // بنجيب نسخة من البروفايدر
+    var up = Provider.of<UserProvider>(context, listen: false);
+    
+    // بنملى الـ Controllers ببيانات اليوزر
+    nameController = TextEditingController(text: up.userName); // تأكدي من اسم المتغير في البروفايدر
+    emailController = TextEditingController(text: up.userEmail);
+    phoneController = TextEditingController(text: up.userPhone);
+    addressController = TextEditingController(text: up.userAddress);
+    bioController = TextEditingController(text: up.userBio);
+  }
   
-  late TextEditingController _nameController;
+  /*final TextEditingController _nameController;
   final TextEditingController _emailController = TextEditingController(text: "jane.d@email.com");
   final TextEditingController _phoneController = TextEditingController(text: "+1 (555) 987-6543");
   final TextEditingController _addressController = TextEditingController(text: "456 Customer Ave, City, State");
-  final TextEditingController _bioController = TextEditingController(text: "Homeowner seeking reliable, quick service for minor repairs.");
+  final TextEditingController _bioController =
+   TextEditingController(text: "Homeowner seeking reliable, quick service for minor repairs.");*/
 
-  @override
+ /* @override
   void initState() {
     super.initState();
     final userName = Provider.of<UserProvider>(context, listen: false).userName;
@@ -39,7 +59,7 @@ class _PersonalPageState extends State<PersonalPage> {
     _addressController.dispose();
     _bioController.dispose();
     super.dispose();
-  }
+  }*/
  /* Future<void> _pickImage() async {
   final ImagePicker picker = ImagePicker();
   
@@ -71,27 +91,22 @@ class _PersonalPageState extends State<PersonalPage> {
     );
 
     if (image != null) {
-      // السطر ده هو السر! بيأكد إن الصفحة لسه مفتوحة قبل ما يكلم البروفايدر
       if (!mounted) return;
-
-      // تحديث الصورة في البروفايدر (تأكدي من اسم الدالة في ملف البروفايدر عندك)
       Provider.of<UserProvider>(context, listen: false).updateUserData( image:File (image.path));
       
       print("Image picked successfully: ${image.path}");
     }
   } catch (e) {
-    // لو حصل أي غلط، اطبعيه في الـ Terminal عشان نعرفه
     print("Error picking image: $e");
   }
 }
 
   void _saveChanges() {
-    Provider.of<UserProvider>(context, listen: false).updateUserData(name: _nameController.text,
-  // لو عندك controllers للإيميل والتليفون ضيفيهم هنا برضه بنفس الطريقة
-  email: _emailController.text, 
-  phone: _phoneController.text,
-  address: _addressController.text,
-  bio: _bioController.text,);
+    Provider.of<UserProvider>(context, listen: false).updateUserData(name: nameController.text,
+  email: emailController.text, 
+  phone: phoneController.text,
+  address: addressController.text,
+  bio: bioController.text,);
     setState(() {
       isEditing = false;
     });
@@ -129,8 +144,9 @@ class _PersonalPageState extends State<PersonalPage> {
                         backgroundColor: const Color(0xFFF2EFE9),
                         backgroundImage: userProvider.userImage != null ? FileImage(userProvider.userImage!) : null,
                         child: userProvider.userImage == null
-                            ? Text(_nameController.text.isNotEmpty ? _nameController.text[0].toUpperCase() : "J",
-                                style: const TextStyle(fontSize: 45, fontWeight: FontWeight.bold, color: AppColors.primaryDarkGreen))
+                            ? Text(nameController.text.isNotEmpty ? nameController.text[0].toUpperCase() : "J",
+                                style: const TextStyle(fontSize: 45, fontWeight: FontWeight.bold, 
+                                color: AppColors.primaryDarkGreen))
                             : null,
                       );
                     },
@@ -166,11 +182,11 @@ class _PersonalPageState extends State<PersonalPage> {
                 children: [
                   const Text("Personal Information", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: AppColors.primaryDarkGreen)),
                   const SizedBox(height: 25),
-                  _buildField("NAME", _nameController, isEditing),
-                  _buildField("EMAIL", _emailController, isEditing, isEmail: true),
-                  _buildField("PHONE", _phoneController, isEditing),
-                  _buildField("ADDRESS", _addressController, isEditing),
-                  _buildField("BIO", _bioController, isEditing, maxLines: 3),
+                  _buildField("NAME", nameController, isEditing),
+                  _buildField("EMAIL", emailController, isEditing, isEmail: true),
+                  _buildField("PHONE", phoneController, isEditing),
+                  _buildField("ADDRESS", addressController, isEditing),
+                  _buildField("BIO", bioController, isEditing, maxLines: 3),
                 ],
               ),
             ),

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:second_project/screens/custom_bottom_nav.dart';
 import 'package:second_project/screens/main_aej_screen.dart';
 import 'package:second_project/screens/welcome_screen_modified.dart'; // تأكدي من مسار الألوان
+import 'user_provider.dart';
+import 'package:provider/provider.dart';
 
 class TaskDetailsScreen extends StatefulWidget {
   final String title;
@@ -25,6 +27,7 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
   late int currentPrice;
   late TextEditingController _dateController;
   late TextEditingController _timeController;
+  late TextEditingController priceController;
 
   @override
   void initState() {
@@ -32,6 +35,7 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
     currentPrice = widget.price;
     _dateController = TextEditingController(text: "11 / 05 / 2025");
     _timeController = TextEditingController(text: "10 : 00 AM");
+    priceController = TextEditingController(text: widget.price.toString());
   }
 
   @override
@@ -91,11 +95,13 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
          // }
         },
       ),*/
-
       backgroundColor: AppColors.backgroundWhite,
       // const Color(0xFFF1F1E6),
-      appBar: AppBar(title: const Text('Task Details',//style: TextStyle(color: AppColors.backgroundWhite),
-      )),
+      appBar: AppBar(
+        title: const Text(
+          'Task Details', //style: TextStyle(color: AppColors.backgroundWhite),
+        ),
+      ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -133,7 +139,11 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
                   color: Color(0xFFF2EFE9),
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(Icons.bolt, color: Colors.orange, size: 20),
+                child: const Icon(
+                  Icons.bolt,
+                  color: AppColors.button,
+                  size: 20,
+                ),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -180,7 +190,7 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
                 child: const Text(
                   'Pending Acceptance',
                   style: TextStyle(
-                    fontSize: 10,
+                    fontSize: 11,
                     color: AppColors.backgroundWhite,
                     fontWeight: FontWeight.bold,
                   ),
@@ -310,7 +320,7 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
                     ),
                     Row(
                       children: [
-                        Icon(Icons.star, color: Colors.orange, size: 14),
+                        Icon(Icons.star, color: AppColors.button, size: 14),
                         Text(
                           ' 4.8 Rating',
                           style: TextStyle(fontSize: 12, color: Colors.grey),
@@ -468,7 +478,10 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
                 Expanded(
                   child: OutlinedButton(
                     onPressed: () => Navigator.pop(context),
-                    child: const Text('Cancel',style:TextStyle(color: Colors.black)),
+                    child: const Text(
+                      'Cancel',
+                      style: TextStyle(color: Colors.black),
+                    ),
                   ),
                 ),
                 const SizedBox(width: 10),
@@ -531,7 +544,7 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
           label,
           textAlign: TextAlign.center,
           style: const TextStyle(
-            fontSize: 12,
+            fontSize: 13,
             fontWeight: FontWeight.bold,
             color: AppColors.primaryDarkGreen,
           ),
@@ -547,7 +560,51 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
           width: double.infinity,
           height: 55,
           child: ElevatedButton(
-            onPressed: () {},
+            onPressed: () {
+              final provider = Provider.of<UserProvider>(
+                context,
+                listen: false,
+              );
+
+              // المقارنة بين اللي في الـ Controller واللي جاي أصلاً في الـ Widget
+              bool isChanged =
+                  (priceController.text != widget.price.toString()) ||
+                  (_timeController.text != "10 : 00 AM") ||
+                  (_dateController.text != "11 / 05 / 2025");
+
+              // تجميع البيانات في Map عشان الـ Provider يفهمها
+              Map<String, dynamic> currentJob = {
+                'title': widget.title,
+                'amount': int.tryParse(priceController.text) ?? widget.price,
+                'customer': 'Client Name', // ممكن تسيبيها كدة مؤقتاً
+                'type': widget.specialty,
+                'date': _dateController.text,
+                'time': _timeController.text,
+              };
+
+              if (!isChanged) {
+                // حالة القبول المباشر -> تروح للجدول
+                provider.acceptJob(currentJob);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text("Job added to your schedule! ✅"),
+                    backgroundColor: Colors.green,
+                  ),
+                );
+              } else {
+                // حالة التفاوض -> تختفي من المتاح بس
+                provider.sendCounterOffer(currentJob);
+
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text("Counter-offer sent! ⏳"),
+                    backgroundColor: Colors.orange,
+                  ),
+                );
+              }
+
+              Navigator.pop(context);
+            }, // onPressed: () {},
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.primaryDarkGreen,
               shape: RoundedRectangleBorder(

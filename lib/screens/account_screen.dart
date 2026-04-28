@@ -5,7 +5,7 @@ import 'package:provider/provider.dart';
 import 'package:second_project/screens/login_screen.dart';
 import 'package:second_project/screens/select_services.dart';
 import 'package:second_project/screens/welcome_screen_modified.dart';
-import 'user_provider.dart'; // تأكدي من مسار ملف البروفايدر عندك
+import 'user_provider.dart'; // 
 
 class WorkerProfilePage extends StatefulWidget {
   final List<String> selectedSkills;

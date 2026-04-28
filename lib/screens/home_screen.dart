@@ -8,7 +8,7 @@ import 'package:second_project/screens/personal_page.dart';
 import 'package:second_project/screens/task_details_screen.dart';
 import 'package:second_project/screens/services_list_screen.dart';
 import 'package:second_project/screens/user_provider.dart';
-import 'package:second_project/screens/vehicle_servicespage.dart';
+//import 'package:second_project/screens/vehicle_servicespage.dart';
 import 'package:second_project/screens/welcome_screen_modified.dart';
 
 import 'package:flutter/material.dart';
@@ -33,11 +33,42 @@ class HomeScreen extends StatelessWidget {
       appBar: AppBar(
         title: const Text("FIXPAY"),
         actions: [
-          IconButton(
-            onPressed: () {},
-            icon: const Icon(Icons.notifications_none),
+          Consumer<UserProvider>(
+  builder: (context, provider, child) {
+    // بنحسب عدد الإشعارات اللي لسه اليوزر مشافهاش
+    int unreadCount = provider.notifications.where((n) => n['isRead'] == false).length;
+
+    return Padding(
+      padding: const EdgeInsets.only(right: 8.0), // مسافة بسيطة من الطرف
+      child: Badge(
+        isLabelVisible: unreadCount > 0,
+        label: Text(unreadCount.toString(), style: const TextStyle(fontSize: 10)),
+        backgroundColor: Colors.red,
+        // بنحرك مكان الـ Badge شوية عشان يبقى مظبوط فوق الدايرة
+        offset: const Offset(-4, 4), 
+        child: GestureDetector(
+          onTap: () {
+            // لما يضغط يفتح الـ Dialog
+            showDialog(
+              context: context,
+              builder: (context) => _buildNotificationDialog(context),
+            );
+          },
+          child: CircleAvatar(
+            radius: 18, // نفس حجم الـ CircleAvatar بتاع البروفايل اللي جنبه
+            backgroundColor: AppColors.backgroundWhite, // اللون اللي مستخدمينه في البروفايل
+            child: const Icon(
+              Icons.notifications_none,
+              color:AppColors.primaryDarkGreen,
+              size: 20,
+            ),
           ),
-          IconButton(onPressed: () {}, icon: const Icon(Icons.person_outline)),
+        ),
+      ),
+    );
+  },
+),
+          // IconButton(onPressed: () {}, icon: const Icon(Icons.person_outline)),
           // const SizedBox(width: 8),
           Consumer<UserProvider>(
             builder: (context, userProvider, child) {
@@ -50,7 +81,8 @@ class HomeScreen extends StatelessWidget {
                   padding: const EdgeInsets.only(right: 16.0),
                   child: CircleAvatar(
                     radius: 18,
-                    backgroundColor: AppColors.backgroundWhite,
+                    backgroundColor:// Color(0xFFF2EFE9),
+                    AppColors.backgroundWhite,
                     // 💡 هنا بنشيك: لو فيه صورة في الـ Provider اعرضيها، لو مفيش اعرضي الأيقونة
                     backgroundImage: userProvider.userImage != null
                         ? FileImage(userProvider.userImage!)
@@ -58,7 +90,7 @@ class HomeScreen extends StatelessWidget {
                     child: userProvider.userImage == null
                         ? const Icon(
                             Icons.person,
-                            color: Colors.white,
+                            color: AppColors.primaryDarkGreen,
                             size: 20,
                           )
                         : null,
@@ -117,24 +149,33 @@ class HomeScreen extends StatelessWidget {
             ),
 
             const SizedBox(height: 24),
-
-            // 2️⃣ قسم Active Requests (قابل للضغط)
-            Text(
-              "Active Requests ($activeRequestsCount)",
-              style: const TextStyle(
+            // 1. العنوان ثابت بره الـ Consumer عشان ميتكررش
+            const Text(
+              "Active Requests", // شيلنا العداد من هنا عشان هنحطه جوه الكارت زي الفيديو
+              style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
                 color: Color(0xFF1B2B2B),
               ),
             ),
             const SizedBox(height: 12),
-            _buildActiveRequestsCard(
-              context,
-            ), // نمرر الـ context هنا لتفعيل التنقل
+
+            // 2. الـ Consumer بيلف بس على الكارت المتغير
+            Consumer<UserProvider>(
+              builder: (context, userProvider, child) {
+                final requests = userProvider.myRequests;
+                //scheduledJobs;
+
+                if (requests.isEmpty) {
+                  return const Text("No active requests at the moment.");
+                }
+
+                // هنا بننادي الميثود اللي بتعمل الكارت الشيك اللي زي الفيديو
+                return _buildActiveRequestsSection(context, requests);
+              },
+            ),
 
             const SizedBox(height: 24),
-
-            // 3️⃣ قسم Browse Categories
             const Text(
               "Browse Categories",
               style: TextStyle(
@@ -158,54 +199,52 @@ class HomeScreen extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 12),
-            _buildReviewsCard(),
+            _buildReviewsCard(context),
           ],
         ),
       ),
-
-      // 🟢 شريط التنقل السفلي والزر العائم
-      /*floatingActionButton: FloatingActionButton(///////////////////هااا
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => const ActiveRequestPage()),
-          );
-        },
-        backgroundColor: AppColors.primaryDarkGreen,
-        shape: const CircleBorder(),
-        child: const Icon(Icons.add, size: 35, color: Colors.white),
-      ),*/
-      // floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
       bottomNavigationBar: const CustomBottomNav(currentIndex: 0),
       //_buildBottomNav(context),
     );
   }
 
-  // --- كارت الطلبات النشطة (Clickable) ---
-  Widget _buildActiveRequestsCard(BuildContext context) {
+  // 1. الميثود اللي بتعمل الكارت الكبير (زي الفيديو)
+  Widget _buildActiveRequestsSection(
+    BuildContext context,
+    List<Map<String, dynamic>> requests,
+  ) {
     return InkWell(
       onTap: () {
-        // الانتقال لصفحة الطلبات الكاملة عند الضغط
-        // Navigator.push(context, MaterialPageRoute(builder: (context) => const ActiveRequestsPage()));
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const ActiveRequestPage()),
+        );
       },
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: const Color(0xFFF2EFE9),
-          borderRadius: BorderRadius.circular(15),
+          color: Color(0xFFF2EFE9),
+          // Colors.white,
+          borderRadius: BorderRadius.circular(20),
           boxShadow: [
-            BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10),
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 15,
+              offset: const Offset(0, 4),
+            ),
           ],
         ),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // الجزء العلوي: الأيقونة والعدد
             Row(
               children: [
-                CircleAvatar(
+                const CircleAvatar(
                   backgroundColor: AppColors.primaryDarkGreen,
-                  child: const Icon(
+                  child: Icon(
                     Icons.build,
-                    color: AppColors.secondaryLightBeige,
+                    color: AppColors.backgroundWhite,
                     size: 20,
                   ),
                 ),
@@ -215,17 +254,18 @@ class HomeScreen extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        "You have $activeRequestsCount active requests",
+                        "You have ${requests.length} active requests",
                         style: const TextStyle(
                           fontWeight: FontWeight.bold,
-                          fontSize: 16,
+                          fontSize: 17,
+                          color: AppColors.primaryDarkGreen,
                         ),
                       ),
                       const Text(
                         "Tap to view status updates.",
                         style: TextStyle(
                           color: AppColors.textgrey,
-                          fontSize: 13,
+                          fontSize: 14,
                         ),
                       ),
                     ],
@@ -233,41 +273,73 @@ class HomeScreen extends StatelessWidget {
                 ),
                 const Icon(
                   Icons.arrow_forward_ios,
+                  color: AppColors.button,
+                  // Colors.grey,
                   size: 16,
-                  color: Colors.grey,
                 ),
               ],
             ),
-            const Divider(height: 24, color: AppColors.button),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  latestRequestTitle,
-                  style: const TextStyle(fontWeight: FontWeight.w500),
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.green.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
+            const SizedBox(height: 16),
+
+            // عرض أول طلبين بشكل Dynamic (حل مشكلة الـ map والـ Error)
+            ...requests
+                .take(2)
+                .map<Widget>((job) => _buildSingleJobRow(job))
+                .toList(),
+
+            // عرض زرار "المزيد" لو فيه طلبات كتير
+            if (requests.length > 2)
+              Padding(
+                padding: const EdgeInsets.only(top: 12),
+                child: Center(
                   child: Text(
-                    "$latestRequestStatus - \$$latestRequestPrice", // بيانات API متغيرة
+                    "+ ${requests.length - 2} more requests",
                     style: const TextStyle(
-                      color: Colors.green,
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
+                      color: Colors.grey,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
                     ),
                   ),
                 ),
-              ],
-            ),
+              ),
           ],
         ),
+      ),
+    );
+  }
+
+  // 2. الميثود اللي بتعمل سطر الطلب الواحد (اللي كانت ناقصة عندك ومسببة ايرور)
+  Widget _buildSingleJobRow(Map<String, dynamic> job) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            job['title'] ?? job['serviceType'] ?? "Service Request",
+            style: const TextStyle(
+              fontWeight: FontWeight.w500,
+              fontSize: 15,
+              color: AppColors.primaryDarkGreen,
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+            decoration: BoxDecoration(
+              color: Colors.green.withOpacity(0.1),
+              //const Color(0xFFE8F5E9),
+              borderRadius: BorderRadius.circular(15),
+            ),
+            child: Text(
+              "${job['status']} - \$${job['price']}",
+              style: const TextStyle(
+                color: Colors.green,
+                fontWeight: FontWeight.bold,
+                fontSize: 11,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -279,11 +351,6 @@ class HomeScreen extends StatelessWidget {
       ServicesListScreen(
         categoryTitle: "Home Repair",
         servicesList: [
-          /* {'name': 'Electrician', 'icon': Icons.bolt},
-      {'name': 'Plumber', 'icon': Icons.water_drop},
-      {'name': 'Carpenter', 'icon': Icons.handyman},
-      {'name': 'Painter', 'icon': Icons.palette},
-      {'name': 'AC Repair', 'icon': Icons.ac_unit},*/
           {'name': 'Electrician', 'icon': Icons.bolt},
           {'name': 'Plumber', 'icon': Icons.water_drop},
           {'name': 'Carpenter', 'icon': Icons.handyman},
@@ -349,14 +416,6 @@ class HomeScreen extends StatelessWidget {
         ],
       ),
     ];
-    /* final List<Widget> categoryScreens = [
-      HomeRepairpage(),
-      CleaningPage(),
-      PersonalPage(),
-      VehicleServicespage(),
-      MovingPage(),
-      OtherServicesPage(),
-    ];*/
     final List<Map<String, dynamic>> categories = [
       {'icon': Icons.build_outlined, 'label': 'Home Repair'},
       {'icon': Icons.home_outlined, 'label': 'Cleaning'},
@@ -416,123 +475,217 @@ class HomeScreen extends StatelessWidget {
   }
 
   // --- كارت المراجعات ---
-  Widget _buildReviewsCard() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF2EFE9),
-        borderRadius: BorderRadius.circular(15),
-      ),
-      child: const Row(
-        children: [
-          CircleAvatar(
-            backgroundColor: Color(0xFFF2EFE9),
-            child: Icon(Icons.star, color: Colors.orange),
-          ),
-          SizedBox(width: 12),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                "Reviews Given",
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
-              Text(
-                "You rated 2 services.",
-                style: TextStyle(color: AppColors.textgrey, fontSize: 13),
-              ),
-            ],
-          ),
-          Spacer(),
-          Icon(Icons.arrow_forward_ios, size: 14, color: Colors.grey),
-        ],
-      ),
-    );
-  }
-}
-
-  // --- شريط التنقل السفلي ---
-  /* Widget _buildBottomNav(BuildContext context) {
-    return BottomAppBar(
-      color: const Color(0xFFF2EFE9),
-      shape: const CircularNotchedRectangle(),
-      notchMargin: 5.0,
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: [
-          _navItem(context, Icons.home_filled, "Home", true, null),
-          Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                "Requests",
-                style: TextStyle(
-                  fontSize: 14,
-                  color: AppColors.primaryDarkGreen,
-                ),
-              ),
-            ],
-          ),
-          // _navItem(Icons.assignment_outlined, "Requests", false),
-           //const SizedBox(height: 60),
-          _navItem(context, Icons.person_outline, "Account", false,const ProfileScreen()),
-          //  _navItem(Icons.settings_outlined, "Settings", false),
-        ],
-      ),
-    );
-  }
-
-  Widget _navItem(
-    BuildContext context,
-    IconData icon,
-    String label,
-    bool isSelected,
-    Widget? targetScreen,
-  ) {
+  Widget _buildReviewsCard(BuildContext context) {
+    final userProvider = Provider.of<UserProvider>(context);
     return InkWell(
       onTap: () {
-        if (targetScreen != null) {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => targetScreen),
-          );
-        }
+        _showRatingDialog(context, "SpencerN");
       },
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: const Color(0xFFF2EFE9),
+          borderRadius: BorderRadius.circular(15),
+        ),
+        child: Row(
+          children: [
+            CircleAvatar(
+              backgroundColor: Color(0xFFF2EFE9),
+              child: Icon(Icons.star, color: Colors.orange),
+            ),
+            SizedBox(width: 12),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  "Reviews Given",
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+                Text(
+                  "You rated ${userProvider.allRatings.length} services.",
+                  // "You rated 2 services.",
+                  style: TextStyle(color: AppColors.textgrey, fontSize: 13),
+                ),
+              ],
+            ),
+            Spacer(),
+            Icon(Icons.arrow_forward_ios, size: 14, color: Colors.grey),
+          ],
+        ),
+      ),
+    );
+  }
 
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            icon,
-            color: isSelected ? AppColors.primaryDarkGreen : Colors.grey,
+  void _showRatingDialog(BuildContext context, String workerName) {
+    double selectedRating = 5.0;
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text("Rate $workerName"),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text("Select stars:"),
+            Slider(
+              value: selectedRating,
+              min: 1,
+              max: 5,
+              divisions: 4,
+              activeColor: Colors.amber,
+              onChanged: (val) => selectedRating = val,
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Provider.of<UserProvider>(
+                context,
+                listen: false,
+              ).submitWorkerRating("Jane D.", selectedRating);
+              Navigator.pop(context);
+            },
+            child: Text("SUBMIT"),
           ),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 14,
-              color: isSelected ? AppColors.primaryDarkGreen : Colors.grey,
+        ],
+      ),
+    );
+  }
+  // 1. دالة بناء العنصر الواحد داخل قائمة الإشعارات
+  // 1. Notification Item (User Version)
+  Widget _buildNotificationItem({
+    required String title,
+    required String time,
+    required Color color,
+    required IconData icon,
+    required String type,
+  }) {
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(15),
+        border: Border.all(color: color.withOpacity(0.1)),
+      ),
+      child: Row(
+        children: [
+          CircleAvatar(
+            radius: 20,
+            backgroundColor: color.withOpacity(0.1),
+            child: Icon(icon, color: color, size: 22),
+          ),
+          const SizedBox(width: 15),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  time,
+                  style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
+                ),
+                // This button appears ONLY for the User when a job is done
+                if (type == 'completed')
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8.0),
+                    child: OutlinedButton(
+                      onPressed: () { /* Navigate to Rate Page */ },
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: Colors.orange,
+                        side: const BorderSide(color: Colors.orange),
+                        minimumSize: const Size(80, 30),
+                      ),
+                      child: const Text("Rate Service", style: TextStyle(fontSize: 12)),
+                    ),
+                  ),
+              ],
             ),
           ),
         ],
       ),
     );
-  }*/
-/*import 'package:flutter/material.dart';
-import 'package:second_project/screens/welcome_screen_modified.dart';
+  }
 
-class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
-
-  @override
-  State<HomeScreen> createState() => _HomeScreen();
-}
-
-class _HomeScreen extends State<HomeScreen> {
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(),
-      backgroundColor: AppColors.backgroundWhite,
+  // 2. دالة بناء الـ Dialog (النافذة المنبثقة) للإشعارات
+  Widget _buildNotificationDialog(BuildContext context) {
+    return Dialog(
+      backgroundColor: const Color(0xFFF2EFE9), // الخلفية البيج
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
+      insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 80),
+      child: Consumer<UserProvider>(
+        builder: (context, provider, child) {
+          return Container(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      "Notifications",
+                      style: TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.primaryDarkGreen, // اللون الغامق بتاعك
+                      ),
+                    ),
+                    if (provider.notifications.isNotEmpty)
+                      IconButton(
+                        icon: const Icon(Icons.delete_sweep_outlined, color: Colors.redAccent),
+                        onPressed: () => provider.clearAllNotifications(),
+                      ),
+                  ],
+                ),
+                const Divider(height: 20),
+                Flexible(
+                  child: provider.notifications.isEmpty
+                      ? const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 40),
+                          child: Text("No new notifications", style: TextStyle(color: Colors.grey)),
+                        )
+                      : ListView.builder(
+                          shrinkWrap: true,
+                          itemCount: provider.notifications.length,
+                          itemBuilder: (context, index) {
+                            var item = provider.notifications[index];
+                            return Dismissible(
+                              key: Key(item['id'].toString()),
+                              direction: DismissDirection.endToStart,
+                              onDismissed: (direction) => provider.deleteNotification(index),
+                              background: Container(
+                                alignment: Alignment.centerRight,
+                                padding: const EdgeInsets.only(right: 20),
+                                decoration: BoxDecoration(
+                                  color: Colors.red.shade100,
+                                  borderRadius: BorderRadius.circular(15),
+                                ),
+                                child: const Icon(Icons.delete_outline, color: Colors.red),
+                              ),
+                              child: _buildNotificationItem(
+                                title: item['title'],
+                                time: item['time'],
+                                type: item['type'] ?? 'default',
+                                // تحديد اللون والأيقونة بناءً على النوع
+                                color: item['type'] == 'success' ? Colors.green : 
+                                       (item['type'] == 'completed' ? Colors.orange : const Color(0xFF1B2B2B)),
+                                icon: item['type'] == 'success' ? Icons.check_circle : 
+                                      (item['type'] == 'completed' ? Icons.star : Icons.notifications_active_outlined),
+                              ),
+                            );
+                          },
+                        ),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
     );
   }
-}*/
+}

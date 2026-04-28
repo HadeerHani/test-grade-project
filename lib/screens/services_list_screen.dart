@@ -75,7 +75,9 @@ class ServicesListScreen extends StatelessWidget {
                         context,
                         MaterialPageRoute(
                           builder: (context) =>
-                              JobDetailsScreen(serviceName: service['name']),
+                              JobDetailsScreen(serviceName: service['name'],
+                              isEdit: false,
+                              ),
                         ),
                       );
                     },

@@ -45,8 +45,9 @@ class _MainScreenState extends State<MainScreen> {
         child: _widgetOptions.elementAt(_selectedIndex),
       ),
       bottomNavigationBar: BottomNavigationBar(
- backgroundColor: const Color(0xFFF2EFE9),
-        //backgroundColor:  AppColors.backgroundWhite,
+ backgroundColor:
+ // const Color(0xFFF2EFE9),
+          AppColors.backgroundWhite,
         currentIndex: _selectedIndex,
         onTap: _onItemTapped,
         selectedItemColor: AppColors.primaryDarkGreen,

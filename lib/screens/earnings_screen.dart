@@ -1,141 +1,155 @@
-// lib/screens/earnings_screen.dart
-
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:second_project/screens/welcome_screen_modified.dart';
-
-import 'jobs_screen.dart'; // لاستخدام AppCard
+import 'user_provider.dart';
 
 class EarningsScreen extends StatelessWidget {
   const EarningsScreen({super.key});
-  
-  // AppBar خاص بصفحة الأرباح
-  PreferredSizeWidget _buildAppBar(BuildContext context) {
-      return AppBar(
-        automaticallyImplyLeading: false,
-      title: Text(
-        'FIXPAY',
-        style: TextStyle(
-          fontWeight: FontWeight.w900,
-          letterSpacing: 1.5,
-          color: AppColors.backgroundWhite,
-        ),
-      ),
-      actions: [
-        IconButton(
-          icon: const Icon(Icons.calendar_today_outlined),
-          onPressed: () {},
-        ),
-        IconButton(
-          icon: const Icon(Icons.notifications_none),
-          onPressed: () {},
-        ),
-      ],
-      );
-    }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.backgroundWhite,
-      appBar: _buildAppBar(context),
-      body: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Text(
-                'Earnings History',
-                style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.primaryDarkGreen),
-              ),
-            ),
-            Padding(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-              child: Text(
-                'You\'ve earned a total of \$280',
-                style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.grey.shade700),
-              ),
-            ),
-            _buildEarningsItem(
-              task: 'Unclog main shower drain',
-              customer: 'Jane D.',
-              amount: 120,
-              date: 'Sep 28, 2025',
-              rating: 4.0,
-              icon: Icons.water_drop_outlined,
-            ),
-            _buildEarningsItem(
-              task: 'Install new ceiling fan',
-              customer: 'Tom H.',
-              amount: 160,
-              date: 'Oct 1, 2025',
-              rating: 5.0,
-              icon: Icons.bolt,
-            ),
-          ],
+      backgroundColor:AppColors.backgroundWhite,
+      
+      appBar: AppBar(
+        title: const Text(
+          "Earnings History",
+         // style: TextStyle(color: Colors.white),
         ),
+      //  backgroundColor: const Color(0xFF1B5E20), // اللون الأخضر بتاعك
+       // elevation: 0,
+      ),
+      body: Consumer<UserProvider>(
+        builder: (context, userProvider, child) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // النص العلوي (Total Earnings)
+              Padding(
+                padding: const EdgeInsets.all(20.0),
+                child: Text(
+                  "You've earned a total of \$${userProvider.totalEarnings.toInt()}",
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.primaryDarkGreen,
+                  ),
+                ),
+              ),
+
+              // قائمة الكروت
+              Expanded(
+                child: ListView.builder(
+                  itemCount: userProvider.earningsHistory.length,
+                  itemBuilder: (context, index) {
+                    final job = userProvider.earningsHistory[index];
+                    return _buildEarningCard(job);
+                  },
+                ),
+              ),
+            ],
+          );
+        },
       ),
     );
   }
 
-  Widget _buildEarningsItem({
-    required String task,
-    required String customer,
-    required int amount,
-    required String date,
-    required double rating,
-    required IconData icon,
-  }) {
-    return AppCard(
+  Widget _buildEarningCard(Map<String, dynamic> job) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
+      padding: const EdgeInsets.all(15),
+      decoration: BoxDecoration(
+        color: AppColors.backgroundWhite,
+        // Color(0xFFF2EFE9),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.3),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Icon(icon, color: AppColors.button, size: 30),
-              const SizedBox(width: 10),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    task,
-                    style: const TextStyle(
-                        fontSize: 16, fontWeight: FontWeight.w600,color: AppColors.primaryDarkGreen),
+          // الأيقونة حسب النوع
+          _buildIcon(job['type']),
+          const SizedBox(width: 15),
+
+          // النصوص (العنوان واسم العميل)
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  job['title'] ?? '',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                    color: AppColors.primaryDarkGreen,
                   ),
-                  Text('Customer: $customer',
-                      style: const TextStyle(fontSize: 14, color: const Color.fromRGBO(117, 117, 117, 1))),
-                  const SizedBox(height: 4),
-                  Row(
-                    children: [
-                      Text(date,
-                          style: const TextStyle(
-                              fontSize: 12, color:AppColors.primaryDarkGreen)),
-                      const SizedBox(width: 8),
-                      Icon(Icons.star, color: AppColors.primaryDarkGreen, size: 12),
-                      Text(rating.toStringAsFixed(1),
-                          style: const TextStyle(fontSize: 12,color: AppColors.primaryDarkGreen)),
-                    ],
+                ),
+                Text(
+                  "Customer: ${job['customer']}",
+                  style: const TextStyle(color: AppColors.textgrey, fontSize: 14),
+                ),
+              ],
+            ),
+          ),
+
+          // السعر والتقييم والتاريخ
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                "+\$${job['amount'].toInt()}",
+                style: const TextStyle(
+                  color: AppColors.primaryDarkGreen,
+                 // color: Color(0xFF689F38),
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
+                ),
+              ),
+              Row(
+                children: [
+                  const Icon(Icons.star, color: AppColors.button, size: 16),
+                  Text(
+                    " ${job['rate']}",
+                    style: const TextStyle(
+                      color: AppColors.textgrey,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ],
               ),
+              const SizedBox(height: 5),
+              Text(
+                job['date'] ?? '',
+                style: const TextStyle(color: AppColors.textgrey, fontSize: 11),
+              ),
             ],
           ),
-          Text('+\$$amount',
-              style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.primaryDarkGreen)),
         ],
       ),
+    );
+  }
+
+  // دالة بسيطة لاختيار الأيقونة
+  Widget _buildIcon(String? type) {
+    IconData iconData = Icons.build;
+    if (type == 'plumbing') iconData = Icons.opacity;
+    if (type == 'electric') iconData = Icons.bolt;
+
+    return Container(
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color:  AppColors.backgroundWhite,
+        //border: Border.all(color: Colors.grey.shade200),
+       // borderRadius: BorderRadius.circular(12),
+      ),
+      child: Icon(iconData, color:AppColors.button,
+      // const Color(0xFF2E4D48),
+        size: 28),
     );
   }
 }

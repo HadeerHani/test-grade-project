@@ -123,6 +123,7 @@ class MyApp extends StatelessWidget {
         ),
       ),
       home: 
+      HomeScreen(),
       /* TaskDetailsScreen(
   title: 'Outdoor Circuit Breaker',
   price: 250,
@@ -131,7 +132,7 @@ class MyApp extends StatelessWidget {
 //),
      // home:TaskDetailsScreen()
       // LoginScreen(),
-      WorkerProfilePage( selectedSkills: ['Plumber,Electerician'],),
+     // WorkerProfilePage( selectedSkills: ['Plumber,Electerician'],),
       // MainScreen(selectedSkills: ['Electerician']),
     );
   }

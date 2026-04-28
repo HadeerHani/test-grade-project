@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:second_project/screens/active_request_page.dart';
 import 'package:second_project/screens/home_screen.dart';
 import 'package:second_project/screens/personal_page.dart';
 import 'package:second_project/screens/welcome_screen_modified.dart';
@@ -51,7 +52,7 @@ class CustomBottomNav extends StatelessWidget {
           label: 'Requests',
         ),
         BottomNavigationBarItem(
-          icon: Icon(Icons.person_outline),
+          icon: Icon(Icons.person),
           //activeIcon: Icon(Icons.person),
           label: 'Account',
         ),
@@ -66,6 +67,10 @@ class CustomBottomNav extends StatelessWidget {
           );
          // Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
         } else if (index == 1) {
+           Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const ActiveRequestPage() ),
+          );
           // Navigator.pushNamed(context, '/requests');
         } else if (index == 2) {
           // Navigator.pushNamed(context, '/account');

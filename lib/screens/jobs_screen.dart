@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:second_project/screens/custom_bottom_nav.dart';
+import 'package:second_project/screens/schedule_screen.dart';
 import 'package:second_project/screens/task_details_screen.dart';
 import 'package:second_project/screens/welcome_screen_modified.dart';
 import 'account_screen.dart';
@@ -19,7 +20,7 @@ class AppCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(15),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.2),
+            color: Colors.grey.withOpacity(0.3),
             spreadRadius: 1,
             blurRadius: 5,
             offset: const Offset(0, 3),
@@ -36,7 +37,7 @@ class JobsScreen extends StatelessWidget {
   const JobsScreen({super.key, required this.selectedSkills});
 
   // لستة بيانات وهمية للتجربة (Dummy Data)
-  final List<Map<String, dynamic>> allJobs = const [
+ final List<Map<String, dynamic>> allJobs = const [
     {
       'title': 'Outdoor Circuit Breaker',
       'specialty': 'Electrician',
@@ -106,7 +107,7 @@ class JobsScreen extends StatelessWidget {
 
             const SizedBox(height: 20),
             // قسم الـ Feedback في الآخر خالص تحت
-            _buildRatingsSection(),
+            _buildRatingsSection(context),
             const SizedBox(height: 100), // مساحة عشان الـ Bottom Nav Bar
           ],
         ),
@@ -271,12 +272,14 @@ class JobsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildRatingsSection() {
+  Widget _buildRatingsSection(BuildContext context) {
+    final provider = Provider.of<UserProvider>(context);
+  final allRatings = provider.allRatings;
     // 1. عرفي اللستة هنا (جوه الميثود) عشان الأخطاء الحمراء تروح
-    final List<Map<String, String>> allRatings = [
+   /* final List<Map<String, String>> allRatings = [
       {'rating': '4.0 from Jane D.', 'date': 'Sep 28, 2025'},
       {'rating': '5.0 from Mark R.', 'date': 'Oct 1, 2025'},
-    ];
+    ];*/
 
     return AppCard(
       child: Column(
@@ -291,6 +294,11 @@ class JobsScreen extends StatelessWidget {
             ),
           ),
           const Divider(height: 20, color: AppColors.primaryDarkGreen),
+          allRatings.isEmpty 
+  ? Text("No ratings yet", style: TextStyle(color:AppColors.primaryDarkGreen,fontSize: 14))
+  : Column(
+      children: allRatings.map((r) => _buildRatingItem(r['rating']!, r['date']!)).toList(),
+    ),
 
           // 2. اللوب اللي بيعرض التقييمات والتواريخ
           ...allRatings
@@ -397,69 +405,213 @@ class JobsScreen extends StatelessWidget {
         style: TextStyle(
           fontWeight: FontWeight.w900,
           letterSpacing: 1.5,
-         // color: Colors.white,
+          // color: Colors.white,
         ),
       ),
       actions: [
+        // 1. أيقونة التقويم
         IconButton(
           icon: const Icon(
             Icons.calendar_today_outlined,
-            color: AppColors.backgroundWhite,
+            color: AppColors.backgroundWhite, // أو AppColors.backgroundWhite
           ),
-          onPressed: () {},
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => MyScheduleScreen()),
+            );
+          },
         ),
-InkWell(
-  onTap: () {
-    // هنا هتحطي الـ Navigation لصفحة الـ Account بعدين
-    print("Go to Account"); 
-  },
-  borderRadius: BorderRadius.circular(20), 
-  child: Padding(
-    padding: const EdgeInsets.all(8.0), 
-    child: CircleAvatar(
-      radius: 16, 
-      backgroundColor: AppColors.backgroundWhite, 
-      child: Icon(
-        Icons.notifications_none,
-        size: 20,
-        color: AppColors.primaryDarkGreen, 
-      ),
-      // --- ده السطر اللي هيفعل الصورة الحقيقية بعدين ---
-      // backgroundImage: imageUrl != null ? NetworkImage(imageUrl) : null,
-    ),
-  ),
-),
-    InkWell(
-  onTap: () {
-    // التنقل لصفحة الحساب (البروفايل)
-    print("Go to Account");
-  },
-  borderRadius: BorderRadius.circular(20),
-  child: Padding(
-    padding: const EdgeInsets.all(8.0),
-    child: Consumer<UserProvider>(
-      builder: (context, userProvider, child) {
-        return CircleAvatar(
-          radius: 16,
-          backgroundColor: AppColors.backgroundWhite,
-          // هنا بنربط مع الـ workerImage اللي في الـ Provider بتاعك
-          backgroundImage: userProvider.workerImage != null 
-              ? FileImage(userProvider.workerImage!) 
-              : null,
-          child: userProvider.workerImage == null 
-              ? Icon(
-                  Icons.person,
-                  size: 20,
-                  color: AppColors.primaryDarkGreen, // لون الأيقونة لما ميكونش فيه صورة
-                )
-              : null,
-        );
-      },
-    ),
-  ),
-),   // استبدال الـ IconButton التالت بالـ InkWell والـ CircleAvatar
- 
+        SizedBox(width: 4),
+        /* borderRadius: BorderRadius.circular(20),
+          child:*/
+        Consumer<UserProvider>(
+          builder: (context, provider, child) {
+            return Badge(
+              // العلامة تظهر بس لو فيه إشعارات جديدة
+              isLabelVisible:
+                  provider.hasNewNotifications &&
+                  provider.notifications.isNotEmpty,
+              label: Text(
+                provider.notifications.length.toString(),
+              ), // اختياري: بيظهر الرقم جوه النقطة
+              backgroundColor: Colors.red,
+              child: InkWell(
+                onTap: () {
+                  provider.markNotificationsAsSeen();
+                  showDialog(
+                    context: context,
+                    builder: (context) {
+                      return _buildNotificationDialog(context);
+                    },
+                  );
+                },
+                child: CircleAvatar(
+                  radius: 17,
+                  backgroundColor: AppColors.backgroundWhite,
+                  child: Icon(
+                    Icons.notifications_none,
+                    size: 18,
+                    color: AppColors.primaryDarkGreen,
+                  ),
+                ),
+              ),
+            );
+          },
+        ),
+
+        SizedBox(width: 8),
+        // 3. أيقونة البروفايل
+        InkWell(
+          onTap: () => print("Go to Account"),
+          borderRadius: BorderRadius.circular(20),
+          child: Padding(
+            padding: const EdgeInsets.only(
+              right: 10,
+              left: 4,
+            ), // تظبيط المسافة الأخيرة
+            child: Consumer<UserProvider>(
+              builder: (context, userProvider, child) {
+                return CircleAvatar(
+                  radius: 17,
+                  backgroundColor: AppColors.backgroundWhite,
+                  backgroundImage: userProvider.workerImage != null
+                      ? FileImage(userProvider.workerImage!)
+                      : null,
+                  child: userProvider.workerImage == null
+                      ? const Icon(
+                          Icons.person,
+                          size: 18,
+                          color: Color(0xFF1B5E20),
+                        )
+                      : null,
+                );
+              },
+            ),
+          ),
+        ),
       ],
+    );
+  }
+
+  Widget _buildNotificationItem({
+    required String title,
+    required String time,
+    required Color color,
+    required IconData icon,
+  }) {
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color:
+            // Color(0xFFF2EFE9),
+            color.withOpacity(0.05), // خلفية خفيفة حسب نوع الإشعار
+        borderRadius: BorderRadius.circular(15),
+        border: Border.all(color: color.withOpacity(0.1)),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, color: color, size: 26),
+          const SizedBox(width: 15),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 14,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  time,
+                  style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // دي الدالة اللي كانت ناقصة ومسببة الـ Error
+  Widget _buildNotificationDialog(BuildContext context) {
+    return Dialog(
+      backgroundColor: Color(0xFFF2EFE9),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 100),
+      child: Consumer<UserProvider>(
+        builder: (context, provider, child) {
+          return Container(
+            padding: const EdgeInsets.all(15),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      "Notifications",
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.primaryDarkGreen,
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.delete_sweep, color: Colors.red),
+                      onPressed: () => provider.clearAllNotifications(),
+                    ),
+                  ],
+                ),
+                const Divider(),
+                Flexible(
+                  child: provider.notifications.isEmpty
+                      ? const Padding(
+                          padding: EdgeInsets.all(20.0),
+                          child: Text("No notifications yet"),
+                        )
+                      : ListView.builder(
+                          shrinkWrap: true,
+                          itemCount: provider.notifications.length,
+                          itemBuilder: (context, index) {
+                            var item = provider.notifications[index];
+                            return Dismissible(
+                              key: Key(item['id'].toString()),
+                              direction: DismissDirection.endToStart,
+                              onDismissed: (direction) =>
+                                  provider.deleteNotification(index),
+                              background: Container(
+                                alignment: Alignment.centerRight,
+                                color: Colors.red.shade400,
+                                child: const Icon(
+                                  Icons.delete,
+                                  color: Colors.white,
+                                ),
+                              ),
+                              child: _buildNotificationItem(
+                                title: item['title'],
+                                time: item['time'],
+                                color: item['type'] == 'success'
+                                    ? Colors.green
+                                    : AppColors.button,
+                                icon: item['type'] == 'success'
+                                    ? Icons.check_circle_outline
+                                    : Icons.notifications_none,
+                              ),
+                            );
+                          },
+                        ),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
     );
   }
 }

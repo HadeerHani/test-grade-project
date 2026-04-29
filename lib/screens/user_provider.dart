@@ -211,6 +211,11 @@ class UserProvider extends ChangeNotifier {
 
   // إضافة طلب جديد (لصفحة Details)
   void addRequest(Map<String, dynamic> request) {
+    // _myRequests.insert(0, request);
+    request['price'] = request['price'] ?? '0'; 
+    request['status'] = request['status'] ?? 'Pending';
+    request['serviceType'] = request['serviceType'] ?? request['title'];
+
     _myRequests.insert(0, request);
     notifyListeners();
   }
@@ -244,7 +249,7 @@ class UserProvider extends ChangeNotifier {
   }
 
   // دالة لتحديث بيانات طلب معين في القائمة
-  void updateRequestStatus(
+  /*void updateRequestStatus(
     int index,
     String newDate,
     String newTitle,
@@ -254,9 +259,29 @@ class UserProvider extends ChangeNotifier {
       _scheduledJobs[index]['date'] = newDate;
       _scheduledJobs[index]['title'] = newTitle;
       _scheduledJobs[index]['price'] = newprice;
+      _scheduledJobs[index]['status'] = 'Pending';
       notifyListeners();
     }
+  }*/
+  // في ملف user_provider.dart
+void updateRequestStatus({
+  required int index,
+  required String newDate,
+  required String newTitle,
+  required String newprice,
+}) {
+  // 👈 اتأكدي إنك بتعدلي في _myRequests مش _scheduledJobs
+  if (index >= 0 && index < _myRequests.length) {
+    _myRequests[index]['date'] = newDate;
+    _myRequests[index]['title'] = newTitle;
+    _myRequests[index]['price'] = newprice; // التحديث هنا
+    _myRequests[index]['status'] = 'Pending'; // الحالة هنا
+    
+    notifyListeners(); // دي اللي بتخلي السعر يتحدث فوراً في الشاشة
+    print("Updated price to: $newprice"); // للـ Debugging
   }
+}
+
 
   void logout() {
     // 1. تصفير بيانات المستخدم الأساسية

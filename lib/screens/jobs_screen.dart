@@ -1,3 +1,4 @@
+
 import 'package:flutter/material.dart';
 import 'package:second_project/screens/custom_bottom_nav.dart';
 import 'package:second_project/screens/schedule_screen.dart';
@@ -70,11 +71,10 @@ class JobsScreen extends StatelessWidget {
   ];
 
   @override
-  Widget build(BuildContext context) {
-    // منطق الفلترة: بنعرض الشغل اللي تخصصه موجود في مهارات اليوزر بس
+  Widget build(BuildContext context) { 
     final filteredJobs = allJobs.where((job) {
       return selectedSkills.contains(job['specialty']);
-    }).toList();
+   }).toList();
 
     return Scaffold(
       backgroundColor: AppColors.backgroundWhite,

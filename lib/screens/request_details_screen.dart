@@ -184,12 +184,18 @@ void dispose() {
 
   if (widget.isEdit) {
     // حالة التعديل: بنحدث بالقيم الجديدة ونخليها Pending
-    userProvider.updateRequestStatus(
+   /* userProvider.updateRequestStatus(
      widget.index ??0,
      _dateController.text,
      widget.serviceName,
-     _budgetController.text,
-    );
+     _budgetController.text
+    );*/
+    userProvider.updateRequestStatus(
+  index: widget.index ?? 0, // 👈 ضيفي اسم البراميتر هنا
+  newDate: _dateController.text, // 👈 والاسم هنا
+  newTitle: widget.serviceName, // 👈 والاسم هنا
+  newprice: _budgetController.text, // 👈 والاسم هنا
+);
   } else {
     // حالة إضافة طلب جديد: بنقرأ من الـ Controllers
     userProvider.addRequest({

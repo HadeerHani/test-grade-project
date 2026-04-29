@@ -129,8 +129,9 @@ class _MyScheduleScreenState extends State<MyScheduleScreen> {
                                 color: AppColors.button,
                                 borderRadius: BorderRadius.circular(15),
                               ),
-                              child:  Text( job['status']??
-                                'Confirmed',
+                              child:  Text( job['status']??'pending',
+                              
+                                //'Confirmed',
                                 style: TextStyle(
                                   color: job['status']=='Pending' ? AppColors.primaryDarkGreen:AppColors.button,
                                   fontSize: 12,

@@ -3,8 +3,10 @@ import 'package:image_picker/image_picker.dart';
 import 'package:http/http.dart' as http;
 import 'package:second_project/screens/main_aej_screen.dart';
 import 'dart:io';
+import 'package:http_parser/http_parser.dart';
 import 'package:second_project/screens/welcome_screen_modified.dart';
 import 'package:second_project/core/api_constants.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class WorkerVerificationScreen extends StatefulWidget {
   final List<String> selectedSkills;
@@ -70,16 +72,32 @@ class _WorkerVerificationScreenState extends State<WorkerVerificationScreen> {
     setState(() => isLoading = true);
 
     try {
-      var request = http.MultipartRequest('POST', Uri.parse(uploadUrl));
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('jwt_token');
 
-     
+      var request = http.MultipartRequest('POST', Uri.parse(uploadUrl));
+      
+      // Attach the token for authentication
+      if (token != null) {
+        request.headers['authorization'] = 'bearer $token';
+      }
       
       request.files.add(
-        await http.MultipartFile.fromPath('id_image', _idFile!.path),
+        await http.MultipartFile.fromPath(
+          'id_image', 
+          _idFile!.path,
+          filename: 'id_verification.jpg',
+          contentType: MediaType('image', 'jpeg'),
+        ),
       );
 
       request.files.add(
-        await http.MultipartFile.fromPath('live_image', _selfieFile!.path),
+        await http.MultipartFile.fromPath(
+          'live_image', 
+          _selfieFile!.path,
+          filename: 'live_selfie.jpg',
+          contentType: MediaType('image', 'jpeg'),
+        ),
       );
 
       var response = await request.send();

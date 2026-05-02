@@ -20,4 +20,7 @@ class ApiConstants {
   static const String verifyIdentity = '$baseUrl/verify-identity';
   static const String login = '$baseUrl/login';
   static const String register = '$baseUrl/register';
+  static const String confirmEmail = '$baseUrl/confirmEmail';
+
+  
 }

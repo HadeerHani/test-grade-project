@@ -5,7 +5,10 @@ import 'package:second_project/screens/new_password_screen.dart';
 import 'package:second_project/screens/select_services.dart';
 import 'package:second_project/screens/welcome_screen_modified.dart';
 import 'package:flutter/services.dart';
-//import 'package:second_project/screens/create_account_screen.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:second_project/core/api_constants.dart';
 
 class VerifyAccountScreen extends StatefulWidget {
   final String? selectedRole;
@@ -20,6 +23,7 @@ class _VerifyAccountScreen extends State<VerifyAccountScreen> {
   final List<TextEditingController> _otpControllers = List.generate(6, (_) => TextEditingController());
   final List<FocusNode> _focusNodes = List.generate(6, (_) => FocusNode());
   bool _showError = false;
+  bool _isLoading = false;
 
   @override
   void dispose() {
@@ -90,50 +94,114 @@ class _VerifyAccountScreen extends State<VerifyAccountScreen> {
                   width: double.infinity,
                   height: 55,
                   child: ElevatedButton(
-                    onPressed: () {
-                      if (!_isOTPComplete()) {
-                        setState(() {
-                          _showError = true;
-                        });
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Please enter the complete 6-digit code'),
-                            backgroundColor: Colors.red,
-                          ),
-                        );
-                        return;
-                      }
+                    onPressed: _isLoading
+                        ? null
+                        : () async {
+                            if (!_isOTPComplete()) {
+                              setState(() {
+                                _showError = true;
+                              });
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text(
+                                      'Please enter the complete 6-digit code'),
+                                  backgroundColor: Colors.red,
+                                ),
+                              );
+                              return;
+                            }
 
-                      if (widget.selectedRole == 'password_reset') {
-                        Navigator.of(context).pushAndRemoveUntil(
-                          MaterialPageRoute(
-                            builder: (context) =>  NewPasswordScreen(),
+                            setState(() {
+                              _isLoading = true;
+                            });
+
+                            try {
+                              final prefs = await SharedPreferences.getInstance();
+                              final token = prefs.getString('jwt_token');
+                              debugPrint('Retrieved Token from Storage: $token');
+
+                              final headers = {
+                                'Content-Type': 'application/json',
+                                'authorization': 'bearer $token',
+                              };
+                              debugPrint('Sending Headers: $headers');
+
+                              final response = await http.post(
+                                Uri.parse(ApiConstants.confirmEmail),
+                                headers: headers,
+                                body: jsonEncode({
+                                  'otp': _getOTP(),
+                                }),
+                              );
+
+                              if (response.statusCode == 200 ||
+                                  response.statusCode == 201) {
+                                if (!mounted) return;
+                                if (widget.selectedRole == 'password_reset') {
+                                  Navigator.of(context).pushAndRemoveUntil(
+                                    MaterialPageRoute(
+                                      builder: (context) => NewPasswordScreen(),
+                                    ),
+                                    (Route<dynamic> route) => false,
+                                  );
+                                } else if (widget.selectedRole == 'Worker') {
+                                  Navigator.of(context).pushAndRemoveUntil(
+                                    MaterialPageRoute(
+                                      builder: (context) =>
+                                          const SelectServicesScreen(),
+                                    ),
+                                    (Route<dynamic> route) => false,
+                                  );
+                                } else if (widget.selectedRole == 'Customer' || widget.selectedRole == 'user') {
+                                  Navigator.of(context).pushAndRemoveUntil(
+                                    MaterialPageRoute(
+                                      builder: (context) => const HomeScreen(),
+                                    ),
+                                    (Route<dynamic> route) => false,
+                                  );
+                                } else {
+                                  // Fallback for role not clearly matched
+                                  Navigator.of(context).pushAndRemoveUntil(
+                                    MaterialPageRoute(
+                                      builder: (context) => const HomeScreen(),
+                                    ),
+                                    (Route<dynamic> route) => false,
+                                  );
+                                }
+                              } else {
+                                final errorData = jsonDecode(response.body);
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(
+                                        errorData['message'] ?? 'Invalid OTP'),
+                                    backgroundColor: Colors.red,
+                                  ),
+                                );
+                              }
+                            } catch (e) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('Error: $e'),
+                                  backgroundColor: Colors.red,
+                                ),
+                              );
+                            } finally {
+                              if (mounted) {
+                                setState(() {
+                                  _isLoading = false;
+                                });
+                              }
+                            }
+                          },
+                    child: _isLoading
+                        ? const CircularProgressIndicator(color: AppColors.primaryDarkGreen)
+                        : const Text(
+                            "Verify Code",
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
-                          (Route<dynamic> route) => false,
-                        );
-                      } else if (widget.selectedRole == 'Worker') {
-                        Navigator.of(context).pushAndRemoveUntil(
-                          MaterialPageRoute(
-                            builder: (context) => const SelectServicesScreen(),
-                          ),
-                          (Route<dynamic> route) => false,
-                        );
-                      } else if (widget.selectedRole == 'Customer') {
-                        Navigator.of(context).pushAndRemoveUntil(
-                          MaterialPageRoute(
-                            builder: (context) => const HomeScreen(),
-                          ),
-                          (Route<dynamic> route) => false,
-                        );
-                      }
-                    },
-                    child: const Text(
-                      "Verify Code",
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
                   ),
                 ),
                 const SizedBox(height: 20),

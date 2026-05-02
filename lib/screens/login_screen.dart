@@ -2,8 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:second_project/screens/create_account_screen.dart';
 import 'package:second_project/screens/forgot_password.dart';
 import 'package:second_project/screens/home_screen.dart';
+import 'package:second_project/screens/main_aej_screen.dart';
 import 'package:second_project/screens/send_code_screen.dart';
 import 'package:second_project/screens/welcome_screen_modified.dart';
+import 'package:second_project/screens/worker_verification_screen.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:second_project/core/api_constants.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -16,6 +22,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  bool _isLoading = false;
 
   @override
   void dispose() {
@@ -103,36 +110,131 @@ class _LoginScreenState extends State<LoginScreen> {
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
-                    onPressed: () {
-                      if (_formKey.currentState!.validate()) {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) {
-                             return VerifyAccountScreen (email: _emailController.text,
-                          selectedRole: 'Customer',);
-                        },
-                            
-                          ),
-                        );
-                      }
-                    },
+                    onPressed: _isLoading
+                        ? null
+                        : () async {
+                            if (_formKey.currentState!.validate()) {
+                              setState(() {
+                                _isLoading = true;
+                              });
+                              try {
+                                final response = await http.post(
+                                  Uri.parse(ApiConstants.login),
+                                  headers: {'Content-Type': 'application/json'},
+                                  body: jsonEncode({
+                                    'email': _emailController.text.trim(),
+                                    'password': _passwordController.text,
+                                  }),
+                                );
+
+                                final data = jsonDecode(response.body);
+                                debugPrint('Login Response: ${response.body}');
+
+                                if (response.statusCode == 200) {
+                                  final token = data['token'];
+                                  final user = data['user'];
+
+                                  if (token != null) {
+                                    final prefs =
+                                        await SharedPreferences.getInstance();
+                                    await prefs.setString('jwt_token', token);
+                                  }
+
+                                  if (!mounted) return;
+
+                                  // 1. Check Email Verification
+                                  if (user['verifiedAt'] == null) {
+                                    Navigator.pushReplacement(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => VerifyAccountScreen(
+                                          email: user['email'],
+                                          selectedRole: user['role'],
+                                        ),
+                                      ),
+                                    );
+                                    return;
+                                  }
+
+                                  // 2. Check Role
+                                  if (user['role'] == 'user') {
+                                    // Route to Customer Dashboard
+                                    Navigator.pushAndRemoveUntil(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => const HomeScreen(),
+                                      ),
+                                      (route) => false,
+                                    );
+                                  } else if (user['role'] == 'worker') {
+                                    // Check Identity Verification Status
+                                    // Note: identityVerification might be nested in user if included by backend
+                                    final idStatus = user['identityVerification'] != null 
+                                        ? user['identityVerification']['status'] 
+                                        : (user['idStatus'] ?? 'unverified');
+
+                                    if (idStatus == 'verified') {
+                                      // Worker Dashboard (Full Access)
+                                      Navigator.pushAndRemoveUntil(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) => const MainScreen(selectedSkills: []),
+                                        ),
+                                        (route) => false,
+                                      );
+                                    } else if (idStatus == 'pending') {
+                                      // Worker Dashboard (Read Only)
+                                      Navigator.pushAndRemoveUntil(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) => const MainScreen(selectedSkills: []),
+                                        ),
+                                        (route) => false,
+                                      );
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        const SnackBar(content: Text('Your identity verification is pending. Read-only access.')),
+                                      );
+                                    } else {
+                                      // unverified or failed -> Route to Identity Verification Screen
+                                      Navigator.pushReplacement(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) => const WorkerVerificationScreen(selectedSkills: []),
+                                        ),
+                                      );
+                                    }
+                                  }
+                                } else {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(data['message'] ?? 'Login failed'),
+                                      backgroundColor: Colors.red,
+                                    ),
+                                  );
+                                }
+                              } catch (e) {
+                                debugPrint('Login Error: $e');
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+                                );
+                              } finally {
+                                if (mounted) {
+                                  setState(() {
+                                    _isLoading = false;
+                                  });
+                                }
+                              }
+                            }
+                          },
                     style: ElevatedButton.styleFrom(
-                      //backgroundColor: AppColors.primaryDarkGreen,
-                      //foregroundColor: AppColors.secondaryLightBeige,
                       padding: const EdgeInsets.symmetric(vertical: 12),
-                      /*  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(30),
                     ),
-                    textStyle: const TextStyle(
-                      fontSize: 19,
-                      fontWeight: FontWeight.bold,
-                    ),*/
-                    ),
-                    child: const Text(
-                      'Log In',
-                      style: TextStyle(fontSize: 19, fontWeight: FontWeight.bold),
-                    ),
+                    child: _isLoading
+                        ? const CircularProgressIndicator(color: AppColors.primaryDarkGreen)
+                        : const Text(
+                            'Log In',
+                            style: TextStyle(fontSize: 19, fontWeight: FontWeight.bold),
+                          ),
                   ),
                 ),
                 const SizedBox(height: 30),

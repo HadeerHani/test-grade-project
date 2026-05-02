@@ -4,6 +4,10 @@ import 'dart:io'; // للتعامل مع الملفات
 import 'package:second_project/screens/login_screen.dart';
 import 'package:second_project/screens/send_code_screen.dart';
 import 'package:second_project/screens/welcome_screen_modified.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:second_project/core/api_constants.dart';
 
 class CreateAccountScreen extends StatefulWidget {
   const CreateAccountScreen({super.key});
@@ -24,10 +28,39 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
   final TextEditingController bioController = TextEditingController();
 
   String? _selectedRole;
+  bool _isLoading = false;
+  bool _isCategoriesLoading = false;
+  List<dynamic> _categories = [];
+  String? _selectedCategoryId;
 
   // 1. تعريف متغير لحفظ الصورة والـ ImagePicker
   XFile? _profileImage;
   final ImagePicker _picker = ImagePicker();
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchCategories();
+  }
+
+  Future<void> _fetchCategories() async {
+    setState(() => _isCategoriesLoading = true);
+    try {
+      final response = await http.get(Uri.parse(ApiConstants.categories));
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        setState(() {
+          _categories = data['data']['categories'] ?? [];
+        });
+      }
+    } catch (e) {
+      debugPrint("Error fetching categories: $e");
+    } finally {
+      if (mounted) {
+        setState(() => _isCategoriesLoading = false);
+      }
+    }
+  }
 
   @override
   void dispose() {
@@ -148,9 +181,22 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
                     hintText: 'Phone Number',
                     prefixIcon: Icon(Icons.phone_android_outlined),
                   ),
-                  validator: (value) => (value!.length < 10)
+                  validator: (value) => (value == null || value.length < 11)
                       ? 'Please enter a valid phone number'
                       : null,
+                ),
+                const SizedBox(height: 10),
+                TextFormField(
+                  controller: ssnController,
+                  keyboardType: TextInputType.number,
+                  maxLength: 14,
+                  decoration: const InputDecoration(
+                    hintText: 'SSN (14 digits)',
+                    prefixIcon: Icon(Icons.badge_outlined),
+                    counterText: '',
+                  ),
+                  validator: (value) =>
+                      (value!.length != 14) ? 'SSN must be 14 digits' : null,
                 ),
                 const SizedBox(height: 10),
                 TextFormField(
@@ -160,8 +206,8 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
                     hintText: 'Password',
                     prefixIcon: Icon(Icons.lock),
                   ),
-                  validator: (value) => (value!.length < 6)
-                      ? 'Password must be at least 6 characters'
+                  validator: (value) => (value == null || value.length < 8)
+                      ? 'Password must be at least 8 characters'
                       : null,
                 ),
                 const SizedBox(height: 10),
@@ -194,20 +240,29 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
                   ],
                 ),
 
-                // عرض الحقول الإضافية في حال اختيار Worker
                 if (_selectedRole == 'Worker') ...[
                   const SizedBox(height: 20),
-                  TextFormField(
-                    controller: ssnController,
-                    keyboardType: TextInputType.number,
-                    maxLength: 9,
-                    decoration: const InputDecoration(
-                      labelText: 'Social Security Number',
-                      counterText: '',
+                  if (_isCategoriesLoading)
+                    const Center(child: CircularProgressIndicator())
+                  else if (_categories.isEmpty)
+                    const Text('No categories available. Please check your connection.', 
+                               style: TextStyle(color: Colors.red))
+                  else
+                    DropdownButtonFormField<String>(
+                      value: _selectedCategoryId,
+                      decoration: const InputDecoration(
+                        labelText: 'Service Category',
+                        prefixIcon: Icon(Icons.category),
+                      ),
+                      items: _categories.map((cat) {
+                        return DropdownMenuItem<String>(
+                          value: cat['_id'],
+                          child: Text(cat['name'] ?? 'Unknown'),
+                        );
+                      }).toList(),
+                      onChanged: (val) => setState(() => _selectedCategoryId = val),
+                      validator: (value) => (_selectedRole == 'Worker' && value == null) ? 'Required for workers' : null,
                     ),
-                    validator: (value) =>
-                        (value!.length != 9) ? 'SSN must be 9 digits' : null,
-                  ),
                   const SizedBox(height: 20),
 
                   // 3. تعديل زرار رفع الصورة ليظهر حالة الرفع أو المعاينة
@@ -262,25 +317,99 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
                 const SizedBox(height: 25),
                 // زر الاستمرار
                 ElevatedButton(
-                  onPressed: () {
-                    if (_selectedRole == null) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Please select a role')),
-                      );
-                      return;
-                    }
-                    if (_formKey.currentState!.validate()) {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => VerifyAccountScreen(
-                            email: emailController.text,
-                            selectedRole: _selectedRole!,
-                          ),
-                        ),
-                      );
-                    }
-                  },
+                  onPressed: _isLoading
+                      ? null
+                      : () async {
+                          if (_selectedRole == null) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                  content: Text('Please select a role')),
+                            );
+                            return;
+                          }
+                          if (_formKey.currentState!.validate()) {
+                            setState(() {
+                              _isLoading = true;
+                            });
+                            try {
+                              List<String> nameParts = fullNameController.text.trim().split(' ');
+                              String firstName = nameParts.isNotEmpty ? nameParts[0] : '';
+                              String lastName = nameParts.length > 1 ? nameParts.sublist(1).join(' ') : ' ';
+
+                              Map<String, dynamic> payload = {
+                                "name": {
+                                  "first": firstName,
+                                  "last": lastName,
+                                },
+                                "userName": fullNameController.text.trim().replaceAll(' ', '_').toLowerCase() + 
+                                            DateTime.now().millisecond.toString(),
+                                "email": emailController.text.trim(),
+                                "phoneNumber": phoneController.text.trim(),
+                                "password": passwordController.text,
+                                "confirmPassword": confirmPasswordController.text,
+                                "role": _selectedRole == 'Worker' ? 'worker' : 'user',
+                                "ssn": ssnController.text.trim(),
+                                "dateOfBirth": "01-01-2000", // Placeholder to satisfy schema if needed
+                                "gender": 0, // Placeholder
+                              };
+                              if (_selectedRole == 'Worker') {
+                                payload["categoryId"] = _selectedCategoryId;
+                                payload["bio"] = bioController.text.trim();
+                              }
+
+                              final response = await http.post(
+                                Uri.parse(ApiConstants.register),
+                                headers: {'Content-Type': 'application/json'},
+                                body: jsonEncode(payload),
+                              );
+
+                              if (response.statusCode == 200 ||
+                                  response.statusCode == 201) {
+                                debugPrint('Raw Backend Response: ${response.body}');
+                                final data = jsonDecode(response.body);
+                                
+                                // Robust extraction: check both root and data object
+                                final token = data['token'] ?? (data['data'] != null ? data['data']['token'] : null);
+                                debugPrint('Extracted Token: $token');
+
+                                if (token != null) {
+                                  final prefs =
+                                      await SharedPreferences.getInstance();
+                                  await prefs.setString('jwt_token', token);
+                                }
+                                if (mounted) {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => VerifyAccountScreen(
+                                        email: emailController.text,
+                                        selectedRole: _selectedRole!,
+                                      ),
+                                    ),
+                                  );
+                                }
+                              } else {
+                                final errorData = jsonDecode(response.body);
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(errorData['message'] ??
+                                        'Registration failed'),
+                                  ),
+                                );
+                              }
+                            } catch (e) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text('Error: $e')),
+                              );
+                            } finally {
+                              if (mounted) {
+                                setState(() {
+                                  _isLoading = false;
+                                });
+                              }
+                            }
+                          }
+                        },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color.fromARGB(255, 218, 208, 178),
                     foregroundColor: AppColors.primaryDarkGreen,
@@ -289,7 +418,10 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
                       borderRadius: BorderRadius.circular(30.0),
                     ),
                   ),
-                  child: const Text('Continue', style: TextStyle(fontSize: 18)),
+                  child: _isLoading
+                      ? const CircularProgressIndicator(
+                          color: AppColors.primaryDarkGreen)
+                      : const Text('Continue', style: TextStyle(fontSize: 18)),
                 ),
 
                 if (_selectedRole != 'Worker') ...[

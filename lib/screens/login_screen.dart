@@ -1,15 +1,16 @@
 import 'package:flutter/material.dart';
-import 'package:second_project/screens/create_account_screen.dart';
-import 'package:second_project/screens/forgot_password.dart';
-import 'package:second_project/screens/home_screen.dart';
-import 'package:second_project/screens/main_aej_screen.dart';
-import 'package:second_project/screens/send_code_screen.dart';
-import 'package:second_project/screens/welcome_screen_modified.dart';
-import 'package:second_project/screens/worker_verification_screen.dart';
+import 'package:provider/provider.dart';
+import 'create_account_screen.dart';
+import 'forgot_password.dart';
+import 'home_screen.dart';
+import 'main_aej_screen.dart';
+import 'welcome_screen_modified.dart';
+import 'worker_verification_screen.dart';
+import 'user_provider.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:second_project/core/api_constants.dart';
+import '../core/api_constants.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -128,86 +129,87 @@ class _LoginScreenState extends State<LoginScreen> {
                                 );
 
                                 final data = jsonDecode(response.body);
+                                print('DEBUG_WORKER_LOGIN_DATA: ${response.body}');
                                 debugPrint('Login Response: ${response.body}');
 
                                 if (response.statusCode == 200) {
                                   final token = data['token'];
                                   final user = data['user'];
+                                  final prefs = await SharedPreferences.getInstance();
 
                                   if (token != null) {
-                                    final prefs =
-                                        await SharedPreferences.getInstance();
                                     await prefs.setString('jwt_token', token);
+                                    await prefs.setString('user_id', user['_id'] ?? '');
+                                    await prefs.setString('user_role', user['role'] ?? 'user');
+                                    await prefs.setString('user_name', user['userName'] ?? user['name'] ?? 'User');
+                                    await prefs.setString('user_email', user['email'] ?? '');
+                                    
+                                    final categoryData = user['categoryId'];
+                                    String catName = "";
+                                    if (categoryData is Map) {
+                                      catName = categoryData['name'] ?? "";
+                                    } else if (categoryData is String) {
+                                      catName = categoryData;
+                                    }
+                                    await prefs.setString('user_category', catName);
+                                    
+                                    debugPrint('Token Saved: $token');
                                   }
 
                                   if (!mounted) return;
 
-                                  // 1. Check Email Verification
-                                  if (user['verifiedAt'] == null) {
-                                    Navigator.pushReplacement(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (context) => VerifyAccountScreen(
-                                          email: user['email'],
-                                          selectedRole: user['role'],
-                                        ),
-                                      ),
-                                    );
-                                    return;
+                                  final userProvider = Provider.of<UserProvider>(context, listen: false);
+                                  
+                                  final String tokenStr = token ?? '';
+                                  final String userId = user['_id'] ?? '';
+                                  final String role = user['role'] ?? 'user';
+                                  final String userName = user['userName'] ?? user['name'] ?? 'User';
+                                  final String email = user['email'] ?? '';
+                                  final identity = user['identityVerification'] ?? {};
+                                  final String verifyStatus = identity['status'] ?? 'unverified';
+
+                                  await prefs.setString('user_verify_status', verifyStatus);
+                                  userProvider.setAuth(tokenStr, userId, role: role, verifyStatus: verifyStatus);
+                                  if (role == 'worker') {
+                                    final categoryData = user['categoryId'];
+                                    String catName = "";
+                                    if (categoryData is Map) {
+                                      catName = categoryData['name'] ?? "";
+                                    } else if (categoryData is String) {
+                                      catName = categoryData;
+                                    }
+                                    userProvider.updateWorkerData(name: userName, email: email, category: catName);
+                                  } else {
+                                    userProvider.updateUserData(name: userName, email: email);
                                   }
 
-                                  // 2. Check Role
+                                  // Direct Routing (Bypassing OTP & ID Verification for presentation/testing)
                                   if (user['role'] == 'user') {
-                                    // Route to Customer Dashboard
                                     Navigator.pushAndRemoveUntil(
                                       context,
                                       MaterialPageRoute(
-                                        builder: (context) => const HomeScreen(),
+                                        builder: (context) =>
+                                            const HomeScreen(),
                                       ),
                                       (route) => false,
                                     );
                                   } else if (user['role'] == 'worker') {
-                                    // Check Identity Verification Status
-                                    // Note: identityVerification might be nested in user if included by backend
-                                    final idStatus = user['identityVerification'] != null 
-                                        ? user['identityVerification']['status'] 
-                                        : (user['idStatus'] ?? 'unverified');
-
-                                    if (idStatus == 'verified') {
-                                      // Worker Dashboard (Full Access)
-                                      Navigator.pushAndRemoveUntil(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (context) => const MainScreen(selectedSkills: []),
+                                    Navigator.pushAndRemoveUntil(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => const MainScreen(
+                                          selectedSkills: [],
                                         ),
-                                        (route) => false,
-                                      );
-                                    } else if (idStatus == 'pending') {
-                                      // Worker Dashboard (Read Only)
-                                      Navigator.pushAndRemoveUntil(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (context) => const MainScreen(selectedSkills: []),
-                                        ),
-                                        (route) => false,
-                                      );
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        const SnackBar(content: Text('Your identity verification is pending. Read-only access.')),
-                                      );
-                                    } else {
-                                      // unverified or failed -> Route to Identity Verification Screen
-                                      Navigator.pushReplacement(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (context) => const WorkerVerificationScreen(selectedSkills: []),
-                                        ),
-                                      );
-                                    }
+                                      ),
+                                      (route) => false,
+                                    );
                                   }
                                 } else {
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     SnackBar(
-                                      content: Text(data['message'] ?? 'Login failed'),
+                                      content: Text(
+                                        data['message'] ?? 'Login failed',
+                                      ),
                                       backgroundColor: Colors.red,
                                     ),
                                   );
@@ -215,7 +217,10 @@ class _LoginScreenState extends State<LoginScreen> {
                               } catch (e) {
                                 debugPrint('Login Error: $e');
                                 ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+                                  SnackBar(
+                                    content: Text('Error: $e'),
+                                    backgroundColor: Colors.red,
+                                  ),
                                 );
                               } finally {
                                 if (mounted) {
@@ -230,10 +235,15 @@ class _LoginScreenState extends State<LoginScreen> {
                       padding: const EdgeInsets.symmetric(vertical: 12),
                     ),
                     child: _isLoading
-                        ? const CircularProgressIndicator(color: AppColors.primaryDarkGreen)
+                        ? const CircularProgressIndicator(
+                            color: AppColors.primaryDarkGreen,
+                          )
                         : const Text(
                             'Log In',
-                            style: TextStyle(fontSize: 19, fontWeight: FontWeight.bold),
+                            style: TextStyle(
+                              fontSize: 19,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                   ),
                 ),
@@ -300,7 +310,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     //ConstrainedBox(constraints: const BoxConstraints(maxHeight: 50),
                     child: OutlinedButton.icon(
                       onPressed: () {
-                        // 
+                        //
                         print('Signing in with Google...');
                       },
                       style: OutlinedButton.styleFrom(
@@ -315,12 +325,15 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                         minimumSize: Size.zero,
                         // padding: const EdgeInsets.symmetric(horizontal: 90),
-                        backgroundColor: Colors.white70, 
+                        backgroundColor: Colors.white70,
                         foregroundColor: AppColors.primaryDarkGreen,
-                        elevation: 1, 
+                        elevation: 1,
                       ),
-                      
-                       icon: Image.asset('lib/assets/images/google.png' ,height: 20,),
+
+                      icon: Image.asset(
+                        'lib/assets/images/google.png',
+                        height: 20,
+                      ),
                       label: const Text(
                         'Google',
                         style: TextStyle(

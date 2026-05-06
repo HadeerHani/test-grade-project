@@ -3,8 +3,8 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
-import 'package:second_project/screens/login_screen.dart';
-import 'package:second_project/screens/welcome_screen_modified.dart';
+import 'login_screen.dart';
+import 'welcome_screen_modified.dart';
 import 'user_provider.dart';
 import 'custom_bottom_nav.dart';
 

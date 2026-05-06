@@ -1,15 +1,19 @@
 import 'package:flutter/material.dart';
-import 'package:second_project/screens/custom_bottom_nav.dart';
-import 'package:second_project/screens/main_aej_screen.dart';
-import 'package:second_project/screens/welcome_screen_modified.dart'; // تأكدي من مسار الألوان
+import 'custom_bottom_nav.dart';
+import 'main_aej_screen.dart';
+import 'welcome_screen_modified.dart'; // تأكدي من مسار الألوان
 import 'user_provider.dart';
 import 'package:provider/provider.dart';
+import 'make_offer_screen.dart';
+import 'chat_screen.dart';
 
 class TaskDetailsScreen extends StatefulWidget {
   final String title;
   final int price;
   final String specialty;
   final String details;
+  final Map<String, dynamic> customer;
+  final String taskId;
 
   const TaskDetailsScreen({
     super.key,
@@ -17,6 +21,8 @@ class TaskDetailsScreen extends StatefulWidget {
     required this.price,
     required this.specialty,
     required this.details,
+    required this.customer,
+    required this.taskId,
   });
 
   @override
@@ -178,24 +184,41 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
                   color: AppColors.primaryDarkGreen,
                 ),
               ),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 6,
-                ),
-                decoration: BoxDecoration(
-                  color: AppColors.primaryDarkGreen,
-                  borderRadius: BorderRadius.circular(15),
-                ),
-                child: const Text(
-                  'Pending Acceptance',
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: AppColors.backgroundWhite,
-                    fontWeight: FontWeight.bold,
+              (() {
+                final status = Provider.of<UserProvider>(context).myBids[widget.taskId];
+                String text = "Open for Bids";
+                Color color = Colors.grey;
+                
+                if (status == 'pending') {
+                  text = "Pending Acceptance";
+                  color = AppColors.primaryDarkGreen;
+                } else if (status == 'accepted') {
+                  text = "Job Accepted";
+                  color = Colors.green;
+                } else if (status == 'countered') {
+                  text = "Counter-Offer Received";
+                  color = Colors.orange;
+                }
+
+                return Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 6,
                   ),
-                ),
-              ),
+                  decoration: BoxDecoration(
+                    color: color,
+                    borderRadius: BorderRadius.circular(15),
+                  ),
+                  child: Text(
+                    text,
+                    style: const TextStyle(
+                      fontSize: 11,
+                      color: AppColors.backgroundWhite,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                );
+              })(),
             ],
           ),
           const Divider(height: 30, color: Colors.grey),
@@ -298,25 +321,44 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
           const SizedBox(height: 15),
           Row(
             children: [
-              const CircleAvatar(
+              CircleAvatar(
                 radius: 25,
-                backgroundColor: Color(0xFFDDE3D5),
-                child: Text(
-                  'SK',
-                  style: TextStyle(
-                    color: AppColors.primaryDarkGreen,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
+                backgroundColor: const Color(0xFFDDE3D5),
+                backgroundImage: widget.customer['avatar'] != null ? NetworkImage(widget.customer['avatar']) : null,
+                child: widget.customer['avatar'] == null
+                    ? Text(
+                        (() {
+                          final nameData = widget.customer['name'];
+                          String displayName = "";
+                          if (nameData is Map) {
+                            displayName = "${nameData['first'] ?? ''} ${nameData['last'] ?? ''}".trim();
+                          } else {
+                            displayName = widget.customer['userName'] ?? "C";
+                          }
+                          return displayName.isNotEmpty ? displayName[0].toUpperCase() : "C";
+                        })(),
+                        style: const TextStyle(
+                          color: AppColors.primaryDarkGreen,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      )
+                    : null,
               ),
               const SizedBox(width: 12),
-              const Expanded(
+              Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Sarah K.',
-                      style: TextStyle(fontWeight: FontWeight.bold),
+                      (() {
+                        final nameData = widget.customer['name'];
+                        if (nameData is Map) {
+                          String full = "${nameData['first'] ?? ''} ${nameData['last'] ?? ''}".trim();
+                          return full.isNotEmpty ? full : (widget.customer['userName'] ?? 'Customer');
+                        }
+                        return widget.customer['userName'] ?? 'Customer';
+                      })(),
+                      style: const TextStyle(fontWeight: FontWeight.bold),
                     ),
                     Row(
                       children: [
@@ -349,15 +391,15 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
             ],
           ),
           const SizedBox(height: 15),
-          const Row(
+          Row(
             children: [
-              Icon(
-                Icons.phone_outlined,
+              const Icon(
+                Icons.email_outlined,
                 size: 18,
                 color: AppColors.primaryDarkGreen,
               ),
-              SizedBox(width: 8),
-              Text('+1 (555) 777-8888', style: TextStyle(fontSize: 13)),
+              const SizedBox(width: 8),
+              Text(widget.customer['email'] ?? 'No email provided', style: const TextStyle(fontSize: 13)),
             ],
           ),
         ],
@@ -560,51 +602,20 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
           width: double.infinity,
           height: 55,
           child: ElevatedButton(
-            onPressed: () {
-              final provider = Provider.of<UserProvider>(
+            onPressed: Provider.of<UserProvider>(context).myBids[widget.taskId] != null 
+                ? null 
+                : () {
+              Navigator.push(
                 context,
-                listen: false,
+                MaterialPageRoute(
+                  builder: (context) => MakeOfferScreen(
+                    taskId: widget.taskId,
+                    initialPrice: widget.price,
+                    taskTitle: widget.title,
+                  ),
+                ),
               );
-
-              // المقارنة بين اللي في الـ Controller واللي جاي أصلاً في الـ Widget
-              bool isChanged =
-                  (priceController.text != widget.price.toString()) ||
-                  (_timeController.text != "10 : 00 AM") ||
-                  (_dateController.text != "11 / 05 / 2025");
-
-              // تجميع البيانات في Map عشان الـ Provider يفهمها
-              Map<String, dynamic> currentJob = {
-                'title': widget.title,
-                'amount': int.tryParse(priceController.text) ?? widget.price,
-                'customer': 'Client Name', // ممكن تسيبيها كدة مؤقتاً
-                'type': widget.specialty,
-                'date': _dateController.text,
-                'time': _timeController.text,
-              };
-
-              if (!isChanged) {
-                // حالة القبول المباشر -> تروح للجدول
-                provider.acceptJob(currentJob);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text("Job added to your schedule! ✅"),
-                    backgroundColor: Colors.green,
-                  ),
-                );
-              } else {
-                // حالة التفاوض -> تختفي من المتاح بس
-                provider.sendCounterOffer(currentJob);
-
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text("Counter-offer sent! ⏳"),
-                    backgroundColor: Colors.orange,
-                  ),
-                );
-              }
-
-              Navigator.pop(context);
-            }, // onPressed: () {},
+            },
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.primaryDarkGreen,
               shape: RoundedRectangleBorder(
@@ -612,11 +623,45 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
               ),
             ),
             child: Text(
-              'Accept (\$$currentPrice)',
+              Provider.of<UserProvider>(context).myBids[widget.taskId] != null
+                  ? 'Offer Submitted'
+                  : 'Make Offer (\$$currentPrice)',
               style: const TextStyle(
                 color: AppColors.backgroundWhite,
                 fontWeight: FontWeight.bold,
                 fontSize: 18,
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 12),
+        SizedBox(
+          width: double.infinity,
+          height: 55,
+          child: OutlinedButton.icon(
+            onPressed: () {
+              final customerName = widget.customer['userName'] ?? widget.customer['name'] ?? "Customer";
+              final customerId = widget.customer['_id'] ?? "";
+              
+              if (customerId.isNotEmpty) {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => ChatScreen(
+                      otherUserId: customerId,
+                      otherUserName: customerName,
+                    ),
+                  ),
+                );
+              }
+            },
+            icon: const Icon(Icons.message_outlined),
+            label: const Text('Message Customer'),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: AppColors.primaryDarkGreen,
+              side: const BorderSide(color: AppColors.primaryDarkGreen, width: 2),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(25),
               ),
             ),
           ),

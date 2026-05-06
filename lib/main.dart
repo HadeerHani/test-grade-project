@@ -1,44 +1,64 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:provider/provider.dart';
-import 'package:second_project/screens/account_screen.dart';
-//import 'package:second_project/screens/account_screen.dart';
-//import 'package:second_project/screens/account_screen.dart';
-//import 'package:second_project/color.dart';
-import 'package:second_project/screens/color_screen.dart';
-import 'package:second_project/screens/create_account_screen.dart';
-import 'package:second_project/screens/earnings_screen.dart';
-import 'package:second_project/screens/forgot_password.dart';
-import 'package:second_project/screens/home_screen.dart';
-import 'package:second_project/screens/jobs_screen.dart';
-//import 'package:second_project/fix.dart';
-import 'package:second_project/screens/login_screen.dart';
-import 'package:second_project/screens/main_aej_screen.dart';
-import 'package:second_project/screens/personal_page.dart';
-import 'package:second_project/screens/select_services.dart';
-import 'package:second_project/screens/send_code_screen.dart';
-import 'package:second_project/screens/user_provider.dart';
-import 'package:second_project/screens/verefication2_screen.dart';
-//import 'package:second_project/verification1_screen.dart';
-import 'package:second_project/screens/welcome_screen_modified.dart';
-import 'package:second_project/screens/welcome_screen_modified.dart';
-import 'package:second_project/screens/worker_verification_screen.dart';
-import 'package:second_project/screens/task_details_screen.dart';
+import 'screens/account_screen.dart';
+import 'screens/color_screen.dart';
+import 'screens/create_account_screen.dart';
+import 'screens/earnings_screen.dart';
+import 'screens/forgot_password.dart';
+import 'screens/home_screen.dart';
+import 'screens/jobs_screen.dart';
+import 'screens/login_screen.dart';
+import 'screens/main_aej_screen.dart';
+import 'screens/personal_page.dart';
+import 'screens/send_code_screen.dart';
+import 'screens/user_provider.dart';
+import 'screens/verefication2_screen.dart';
+import 'screens/welcome_screen_modified.dart';
+import 'screens/worker_verification_screen.dart';
+import 'screens/task_details_screen.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await dotenv.load(fileName: ".env");
+  final prefs = await SharedPreferences.getInstance();
+  final token = prefs.getString('jwt_token');
+  final role = prefs.getString('user_role');
+  final verifyStatus = prefs.getString('user_verify_status');
+  
   runApp(
     MultiProvider(
       providers: [ChangeNotifierProvider(create: (_) => UserProvider())],
-      child: const MyApp(),
+      child: MyApp(startToken: token, startRole: role, verifyStatus: verifyStatus),
     ),
   );
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  final String? startToken;
+  final String? startRole;
+  final String? verifyStatus;
+  const MyApp({super.key, this.startToken, this.startRole, this.verifyStatus});
 
-  // This widget is the root of your application.color
   @override
   Widget build(BuildContext context) {
+    // Initialize provider data if token exists
+    if (startToken != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        final up = Provider.of<UserProvider>(context, listen: false);
+        up.setAuth(startToken!, ""); // userId will be re-fetched or loaded
+      });
+    }
+
+    Widget initialScreen = const LoginScreen();
+    if (startToken != null) {
+      if (startRole == 'worker') {
+        initialScreen = const MainScreen(selectedSkills: []);
+      } else {
+        initialScreen = const HomeScreen();
+      }
+    }
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       // initialRoute: '/home',
@@ -122,18 +142,7 @@ class MyApp extends StatelessWidget {
           ),
         ),
       ),
-      home: 
-     // HomeScreen(),
-      /* TaskDetailsScreen(
-  title: 'Outdoor Circuit Breaker',
-  price: 250,
-  specialty: 'Electrician',
-  details: 'Need a dedicated 20A circuit run to the new shed.',*/
-//),
-     // home:TaskDetailsScreen()
-      // LoginScreen(),
-      WorkerProfilePage( selectedSkills: ['Plumber,Electerician'],),
-      // MainScreen(selectedSkills: ['Electerician']),
+      home: const LoginScreen(),
     );
   }
 }

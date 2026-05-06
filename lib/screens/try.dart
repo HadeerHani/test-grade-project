@@ -1,6 +1,6 @@
 /*import 'package:flutter/material.dart';
-import 'package:second_project/screens/worker_verification_screen.dart';
-import 'package:second_project/screens/welcome_screen_modified.dart';
+import 'worker_verification_screen.dart';
+import 'welcome_screen_modified.dart';
 class WorkerVerificationScreen extends StatefulWidget {
   const WorkerVerificationScreen({super.key});
 

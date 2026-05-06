@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:second_project/screens/custom_bottom_nav.dart';
-import 'package:second_project/screens/request_details_screen.dart';
-import 'package:second_project/screens/welcome_screen_modified.dart';
+import 'custom_bottom_nav.dart';
+import 'request_details_screen.dart';
+import 'welcome_screen_modified.dart';
 import 'jobs_screen.dart';
 
 class ServicesListScreen extends StatelessWidget {

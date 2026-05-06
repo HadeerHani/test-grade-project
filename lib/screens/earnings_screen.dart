@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:second_project/screens/welcome_screen_modified.dart';
+import 'welcome_screen_modified.dart';
 import 'user_provider.dart';
 
 class EarningsScreen extends StatelessWidget {

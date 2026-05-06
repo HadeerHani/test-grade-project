@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart'; // مكتبة اختيار الصور
 import 'dart:io'; // للتعامل مع الملفات
-import 'package:second_project/screens/login_screen.dart';
-import 'package:second_project/screens/send_code_screen.dart';
-import 'package:second_project/screens/welcome_screen_modified.dart';
+import 'login_screen.dart';
+import 'send_code_screen.dart';
+import 'welcome_screen_modified.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:second_project/core/api_constants.dart';
+import '../core/api_constants.dart';
 
 class CreateAccountScreen extends StatefulWidget {
   const CreateAccountScreen({super.key});
@@ -370,12 +370,15 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
                                 
                                 // Robust extraction: check both root and data object
                                 final token = data['token'] ?? (data['data'] != null ? data['data']['token'] : null);
+                                final user = data['user'] ?? (data['data'] != null ? data['data']['user'] : null);
                                 debugPrint('Extracted Token: $token');
 
                                 if (token != null) {
-                                  final prefs =
-                                      await SharedPreferences.getInstance();
+                                  final prefs = await SharedPreferences.getInstance();
                                   await prefs.setString('jwt_token', token);
+                                  await prefs.setString('user_id', user['_id'] ?? '');
+                                  await prefs.setString('user_role', user['role'] ?? 'user');
+                                  await prefs.setString('user_name', user['userName'] ?? 'User');
                                 }
                                 if (mounted) {
                                   Navigator.push(

@@ -1,14 +1,14 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
-import 'package:second_project/screens/home_screen.dart';
-import 'package:second_project/screens/new_password_screen.dart';
-import 'package:second_project/screens/select_services.dart';
-import 'package:second_project/screens/welcome_screen_modified.dart';
+import 'home_screen.dart';
+import 'new_password_screen.dart';
+import 'worker_verification_screen.dart';
+import 'welcome_screen_modified.dart';
 import 'package:flutter/services.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:second_project/core/api_constants.dart';
+import '../core/api_constants.dart';
 
 class VerifyAccountScreen extends StatefulWidget {
   final String? selectedRole;
@@ -122,7 +122,9 @@ class _VerifyAccountScreen extends State<VerifyAccountScreen> {
 
                               final headers = {
                                 'Content-Type': 'application/json',
+                                'Authorization': 'bearer $token',
                                 'authorization': 'bearer $token',
+                                'token': token ?? "",
                               };
                               debugPrint('Sending Headers: $headers');
 
@@ -148,7 +150,7 @@ class _VerifyAccountScreen extends State<VerifyAccountScreen> {
                                   Navigator.of(context).pushAndRemoveUntil(
                                     MaterialPageRoute(
                                       builder: (context) =>
-                                          const SelectServicesScreen(),
+                                          const WorkerVerificationScreen(),
                                     ),
                                     (Route<dynamic> route) => false,
                                   );

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:second_project/screens/send_code_screen.dart';
-import 'package:second_project/screens/welcome_screen_modified.dart';
+import 'send_code_screen.dart';
+import 'welcome_screen_modified.dart';
 
 class ForgotPassword extends StatefulWidget {
   const ForgotPassword({super.key});

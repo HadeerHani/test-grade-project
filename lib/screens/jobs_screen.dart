@@ -1,9 +1,9 @@
 
 import 'package:flutter/material.dart';
-import 'package:second_project/screens/custom_bottom_nav.dart';
-import 'package:second_project/screens/schedule_screen.dart';
-import 'package:second_project/screens/task_details_screen.dart';
-import 'package:second_project/screens/welcome_screen_modified.dart';
+import 'custom_bottom_nav.dart';
+import 'schedule_screen.dart';
+import 'task_details_screen.dart';
+import 'welcome_screen_modified.dart';
 import 'account_screen.dart';
 import 'package:provider/provider.dart';
 import 'user_provider.dart';
@@ -33,48 +33,29 @@ class AppCard extends StatelessWidget {
   }
 }
 
-class JobsScreen extends StatelessWidget {
+class JobsScreen extends StatefulWidget {
   final List<String> selectedSkills;
   const JobsScreen({super.key, required this.selectedSkills});
 
-  // لستة بيانات وهمية للتجربة (Dummy Data)
- final List<Map<String, dynamic>> allJobs = const [
-    {
-      'title': 'Outdoor Circuit Breaker',
-      'specialty': 'Electrician',
-      'price': 250,
-      'details': 'Need a dedicated 20A circuit run to the new shed.',
-      'location': 'East Suburbs, 15 mi',
-      'posted': 'Posted 3h ago',
-      'icon': Icons.lightbulb_outline,
-    },
-    {
-      'title': 'Kitchen Sink Leak',
-      'specialty': 'Plumber',
-      'price': 150,
-      'details':
-          'Fixing a major leak under the kitchen sink and replacing the pipe.',
-      'location': 'West Coast, 10 mi',
-      'posted': 'Posted 5h ago',
-      'icon': Icons.water_drop,
-    },
-    {
-      'title': 'Unusual Request',
-      'specialty': 'Customized Request',
-      'price': 100,
-      'details':
-          'Need someone to assemble complex Swedish flat-pack furniture.',
-      'location': 'North City, 5 mi',
-      'posted': 'Posted 2h ago',
-      'icon': Icons.auto_fix_high,
-    },
-  ];
+  @override
+  State<JobsScreen> createState() => _JobsScreenState();
+}
+
+class _JobsScreenState extends State<JobsScreen> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Provider.of<UserProvider>(context, listen: false).fetchWorkerTasks();
+    });
+  }
 
   @override
-  Widget build(BuildContext context) { 
-    final filteredJobs = allJobs.where((job) {
-      return selectedSkills.contains(job['specialty']);
-   }).toList();
+  Widget build(BuildContext context) {
+    final provider = Provider.of<UserProvider>(context);
+    final allJobs = provider.availableJobs;
+
+    final filteredJobs = allJobs;
 
     return Scaffold(
       backgroundColor: AppColors.backgroundWhite,
@@ -85,24 +66,24 @@ class JobsScreen extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
             const SizedBox(height: 10),
-            _buildHeader(),
+            _buildHeader(provider),
 
             // لو مفيش وظائف تناسب المهارات
             if (filteredJobs.isEmpty)
               _buildEmptyState(context)
             else
-              // عرض الوظائف المفلترة كقائمة (List) فوق
-              ...filteredJobs.map(
-                (job) => _buildJobCard(
-                  context,
-                  title: job['title'],
-                  specialty: job['specialty'],
-                  price: job['price'],
-                  details: job['details'],
-                  location: job['location'],
-                  posted: job['posted'],
-                  icon: job['icon'],
-                ),
+              // عرض أول وظيفة فقط (Show only the first job)
+              _buildJobCard(
+                context,
+                title: filteredJobs[0]['title'],
+                specialty: filteredJobs[0]['specialty'],
+                price: filteredJobs[0]['price'],
+                details: filteredJobs[0]['details'],
+                location: filteredJobs[0]['location'],
+                posted: filteredJobs[0]['posted'],
+                icon: filteredJobs[0]['icon'] ?? Icons.work_outline,
+                customer: filteredJobs[0]['customer'] ?? {},
+                taskId: filteredJobs[0]['id'] ?? "",
               ),
 
             const SizedBox(height: 20),
@@ -115,23 +96,47 @@ class JobsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildHeader(UserProvider provider) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Available Jobs',
-            style: TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-              color: AppColors.primaryDarkGreen,
-            ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Available Jobs',
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.primaryDarkGreen,
+                ),
+              ),
+              TextButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => AllJobsScreen(selectedSkills: widget.selectedSkills),
+                    ),
+                  );
+                },
+                child: const Text(
+                  'See All',
+                  style: TextStyle(
+                    color: AppColors.primaryDarkGreen,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 5),
           Text(
-            'Showing tasks matching your: ${selectedSkills.join(", ")}',
+            provider.workerCategory.isNotEmpty 
+                ? 'Showing tasks matching your specialty: ${provider.workerCategory}'
+                : 'Showing all available tasks in your category',
             style: TextStyle(fontSize: 14, color: Colors.grey.shade700),
           ),
         ],
@@ -148,6 +153,8 @@ class JobsScreen extends StatelessWidget {
     required String location,
     required String posted,
     required IconData icon,
+    required Map<String, dynamic> customer,
+    required String taskId,
   }) {
     return AppCard(
       child: Column(
@@ -181,33 +188,59 @@ class JobsScreen extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 6),
-          // الـ Tag بتاع التخصص زي الفيديو
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: BoxDecoration(
-              color: AppColors.primaryDarkGreen.withOpacity(0.1),
-              //const Color(0xFFDDE3D5),
-              borderRadius: BorderRadius.circular(6),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.grey.withOpacity(0.2),
-                  spreadRadius: 1,
-                  blurRadius: 5,
-                  offset: const Offset(
-                    0,
-                    3,
-                  ), // اتجاه الظل لتحت عشان يبرز الكارد
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: AppColors.primaryDarkGreen.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(6),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.grey.withOpacity(0.2),
+                      spreadRadius: 1,
+                      blurRadius: 5,
+                      offset: const Offset(0, 3),
+                    ),
+                  ],
                 ),
-              ],
-            ),
-            child: Text(
-              specialty.toUpperCase(),
-              style: const TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: Color(0xFF5E7153),
+                child: Text(
+                  specialty.toUpperCase(),
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF5E7153),
+                  ),
+                ),
               ),
-            ),
+              const SizedBox(width: 8),
+              if (Provider.of<UserProvider>(context).myBids[taskId] != null)
+                (() {
+                  final status = Provider.of<UserProvider>(context).myBids[taskId];
+                  String text = "BID SENT";
+                  Color color = Colors.orange;
+                  if (status == 'accepted') {
+                    text = "ACCEPTED";
+                    color = Colors.green;
+                  }
+                  return Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: color.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(6),
+                      border: Border.all(color: color.withOpacity(0.5)),
+                    ),
+                    child: Text(
+                      text,
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                        color: color,
+                      ),
+                    ),
+                  );
+                })(),
+            ],
           ),
           const SizedBox(height: 12),
           Text(
@@ -256,6 +289,8 @@ class JobsScreen extends StatelessWidget {
                         price: price,
                         details: details,
                         specialty: specialty,
+                        customer: customer,
+                        taskId: taskId,
                       ),
                     ),
                   );
@@ -346,7 +381,7 @@ class JobsScreen extends StatelessWidget {
             Icon(Icons.work_off_outlined, size: 70, color: AppColors.button),
             const SizedBox(height: 10),
             Text(
-              "No jobs for your specialties yet.",
+              "No jobs available in your category",
               style: TextStyle(color: AppColors.primaryDarkGreen, fontSize: 18),
             ),
             // النص الرصاصي الصغير اللي كان ناقصك
@@ -369,7 +404,7 @@ class JobsScreen extends StatelessWidget {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => WorkerProfilePage(selectedSkills: []),
+                    builder: (context) => AccountScreen(selectedSkills: []),
                   ),
                 );
               },
@@ -611,6 +646,198 @@ class JobsScreen extends StatelessWidget {
             ),
           );
         },
+      ),
+    );
+  }
+}
+
+class AllJobsScreen extends StatelessWidget {
+  final List<String> selectedSkills;
+  const AllJobsScreen({super.key, required this.selectedSkills});
+
+  @override
+  Widget build(BuildContext context) {
+    final provider = Provider.of<UserProvider>(context);
+    final allJobs = provider.availableJobs;
+
+    return Scaffold(
+      backgroundColor: AppColors.backgroundWhite,
+      appBar: AppBar(
+        title: const Text('All Available Jobs'),
+        backgroundColor: AppColors.primaryDarkGreen,
+        foregroundColor: Colors.white,
+      ),
+      body: allJobs.isEmpty
+          ? const Center(child: Text('No jobs available'))
+          : ListView.builder(
+              padding: const EdgeInsets.symmetric(vertical: 10),
+              itemCount: allJobs.length,
+              itemBuilder: (context, index) {
+                final job = allJobs[index];
+                return _buildJobCard(
+                  context,
+                  title: job['title'],
+                  specialty: job['specialty'],
+                  price: job['price'],
+                  details: job['details'],
+                  location: job['location'],
+                  posted: job['posted'],
+                  icon: job['icon'] ?? Icons.work_outline,
+                  customer: job['customer'] ?? {},
+                  taskId: job['id'] ?? "",
+                );
+              },
+            ),
+    );
+  }
+
+  Widget _buildJobCard(
+    BuildContext context, {
+    required String title,
+    required String specialty,
+    required int price,
+    required String details,
+    required String location,
+    required String posted,
+    required IconData icon,
+    required Map<String, dynamic> customer,
+    required String taskId,
+  }) {
+    return AppCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  Icon(icon, color: AppColors.button, size: 22),
+                  const SizedBox(width: 10),
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.primaryDarkGreen,
+                    ),
+                  ),
+                ],
+              ),
+              Text(
+                '\$$price',
+                style: const TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.primaryDarkGreen,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: AppColors.primaryDarkGreen.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Text(
+                  specialty.toUpperCase(),
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF5E7153),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              if (Provider.of<UserProvider>(context).myBids[taskId] != null)
+                (() {
+                  final status = Provider.of<UserProvider>(context).myBids[taskId];
+                  String text = "BID SENT";
+                  Color color = Colors.orange;
+                  if (status == 'accepted') {
+                    text = "ACCEPTED";
+                    color = Colors.green;
+                  }
+                  return Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: color.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(6),
+                      border: Border.all(color: color.withOpacity(0.5)),
+                    ),
+                    child: Text(
+                      text,
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                        color: color,
+                      ),
+                    ),
+                  );
+                })(),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Text(
+            details,
+            style: TextStyle(
+              fontSize: 14,
+              color: Colors.grey.shade800,
+              height: 1.3,
+            ),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
+          const SizedBox(height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    location,
+                    style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                  ),
+                  Text(
+                    posted,
+                    style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                  ),
+                ],
+              ),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.button,
+                  foregroundColor: AppColors.primaryDarkGreen,
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(30),
+                  ),
+                ),
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => TaskDetailsScreen(
+                        title: title,
+                        price: price,
+                        details: details,
+                        specialty: specialty,
+                        customer: customer,
+                        taskId: taskId,
+                      ),
+                    ),
+                  );
+                },
+                child: const Text('View Details'),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }

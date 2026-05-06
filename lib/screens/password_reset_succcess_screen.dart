@@ -1,7 +1,7 @@
 // password_reset_success_screen.dart
 import 'package:flutter/material.dart';
-import 'package:second_project/screens/login_screen.dart';
-import 'package:second_project/screens/welcome_screen_modified.dart';
+import 'login_screen.dart';
+import 'welcome_screen_modified.dart';
 class PasswordResetSuccessScreen extends StatelessWidget {
   const PasswordResetSuccessScreen({super.key});
 

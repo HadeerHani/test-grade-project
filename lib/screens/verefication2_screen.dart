@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-//import 'package:second_project/screens/account_screen.dart';
-//import 'package:second_project/screens/earnings_screen.dart';
-//import 'package:second_project/screens/jobs_screen.dart';
-import 'package:second_project/screens/welcome_screen_modified.dart';
-import 'package:second_project/screens/worker_verification_screen.dart';
+//import 'account_screen.dart';
+//import 'earnings_screen.dart';
+//import 'jobs_screen.dart';
+import 'welcome_screen_modified.dart';
+import 'worker_verification_screen.dart';
 
 class Verification2Screen extends StatefulWidget {
   final List<String> selectedSkills;

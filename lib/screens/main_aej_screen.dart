@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:second_project/screens/welcome_screen_modified.dart';
+import 'welcome_screen_modified.dart';
 import 'jobs_screen.dart'; 
 import 'earnings_screen.dart'; 
 import 'account_screen.dart'; 
@@ -25,7 +25,7 @@ class _MainScreenState extends State<MainScreen> {
     _widgetOptions = [
       JobsScreen(selectedSkills: widget.selectedSkills),
       const EarningsScreen(),
-       WorkerProfilePage(selectedSkills: widget.selectedSkills),
+      AccountScreen(selectedSkills: widget.selectedSkills),
     ];
   }
 

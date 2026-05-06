@@ -1,12 +1,12 @@
-/*import 'package:flutter/material.dart';
-import 'package:second_project/screens/request_details_screen.dart';
-import 'package:second_project/screens/welcome_screen_modified.dart';
-class HomeRepairpage extends StatelessWidget {
-  const HomeRepairpage({super.key});
+import 'package:flutter/material.dart';
+import 'request_details_screen.dart';
+import 'welcome_screen_modified.dart';
+
+class HomeRepairPage extends StatelessWidget {
+  const HomeRepairPage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    // قائمة بأسماء الخدمات والأيقونات زي الصورة بالظبط
     final List<Map<String, dynamic>> services = [
       {'name': 'Electrician', 'icon': Icons.bolt},
       {'name': 'Plumber', 'icon': Icons.water_drop},
@@ -19,15 +19,9 @@ class HomeRepairpage extends StatelessWidget {
     ];
 
     return Scaffold(
-      backgroundColor: AppColors.secondaryLightBeige,//const Color(0xFFF2EFE9), 
+      backgroundColor: AppColors.secondaryLightBeige,
       appBar: AppBar(
-        title: const Text("Home Repair",// style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)
-        ),
-       // backgroundColor: const Color(0xFF1B2B2B), // نفس اللون الأخضر الغامق
-      /*  leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Navigator.pop(context),
-        ),*/
+        title: const Text("Home Repair"),
       ),
       body: ListView.builder(
         padding: const EdgeInsets.all(16),
@@ -45,14 +39,13 @@ class HomeRepairpage extends StatelessWidget {
       decoration: BoxDecoration(
         color: const Color(0xFFF2EFE9),
         borderRadius: BorderRadius.circular(15),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10)], // الظل الخفيف
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10)],
       ),
       child: ListTile(
         leading: Icon(service['icon'], color: AppColors.primaryDarkGreen),
-        title: Text(service['name'], style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16,color: AppColors.primaryDarkGreen)),
+        title: Text(service['name'], style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.primaryDarkGreen)),
         trailing: const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
         onTap: () {
-          // 🚀 الانتقال لنفس الصفحة مع تمرير اسم الخدمة
           Navigator.push(
             context,
             MaterialPageRoute(
@@ -63,4 +56,4 @@ class HomeRepairpage extends StatelessWidget {
       ),
     );
   }
-}*/
+}

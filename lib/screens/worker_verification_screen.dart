@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:http/http.dart' as http;
-import 'package:second_project/screens/main_aej_screen.dart';
+import 'main_aej_screen.dart';
 import 'dart:io';
 import 'package:http_parser/http_parser.dart';
-import 'package:second_project/screens/welcome_screen_modified.dart';
-import 'package:second_project/core/api_constants.dart';
+import 'welcome_screen_modified.dart';
+import '../core/api_constants.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class WorkerVerificationScreen extends StatefulWidget {
   final List<String> selectedSkills;
-  const WorkerVerificationScreen({super.key,required this.selectedSkills});
+  const WorkerVerificationScreen({super.key, this.selectedSkills = const []});
 
   @override
   State<WorkerVerificationScreen> createState() =>
@@ -77,9 +77,12 @@ class _WorkerVerificationScreenState extends State<WorkerVerificationScreen> {
 
       var request = http.MultipartRequest('POST', Uri.parse(uploadUrl));
       
-      // Attach the token for authentication
+      // Attach the token for authentication (Brute-Force Headers)
       if (token != null) {
+        request.headers['Authorization'] = 'bearer $token';
         request.headers['authorization'] = 'bearer $token';
+        request.headers['token'] = token;
+        request.headers['x-auth-token'] = token;
       }
       
       request.files.add(
@@ -104,6 +107,10 @@ class _WorkerVerificationScreenState extends State<WorkerVerificationScreen> {
 
       if (response.statusCode == 200) {
         if (!mounted) return;
+        
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('user_verify_status', 'verified');
+        
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) =>  MainScreen(selectedSkills: widget.selectedSkills)),
@@ -175,36 +182,38 @@ class _WorkerVerificationScreenState extends State<WorkerVerificationScreen> {
             style: TextStyle(fontSize: 14, color: Colors.grey[600]),
           ),
           const SizedBox(height: 15),
-          isDone
-              ? Row(
-                  children: [
-                    Icon(
-                      Icons.check_circle,
-                      color: AppColors.primaryDarkGreen,
-                      size: 18,
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      stepNumber == 1 ? 'ID Selected' : 'Selfie Captured',
-                      style: TextStyle(
-                        color: AppColors.primaryDarkGreen,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                )
-              : ElevatedButton.icon(
-                  onPressed: onPressed,
-                  icon: Icon(icon, color: AppColors.primaryDarkGreen, size: 20),
-                  label: Text(buttonText),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.button,
-                    foregroundColor: AppColors.primaryDarkGreen,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
+          Row(
+            children: [
+              if (isDone) ...[
+                Icon(
+                  Icons.check_circle,
+                  color: AppColors.primaryDarkGreen,
+                  size: 18,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  stepNumber == 1 ? 'ID Selected' : 'Selfie Captured',
+                  style: TextStyle(
+                    color: AppColors.primaryDarkGreen,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
+                const Spacer(),
+              ],
+              ElevatedButton.icon(
+                onPressed: onPressed,
+                icon: Icon(isDone ? Icons.refresh : icon, color: AppColors.primaryDarkGreen, size: 20),
+                label: Text(isDone ? (stepNumber == 1 ? 'Change' : 'Retake') : buttonText),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.button,
+                  foregroundColor: AppColors.primaryDarkGreen,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+              ),
+            ],
+          ),
         ],
       ),
     );

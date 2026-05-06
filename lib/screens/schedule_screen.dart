@@ -1,4 +1,4 @@
-import 'package:second_project/screens/welcome_screen_modified.dart';
+import 'welcome_screen_modified.dart';
 
 import 'user_provider.dart';
 import 'package:flutter/material.dart';
